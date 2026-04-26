@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리집 재고 관리 | Family Inventory</title>
-    <link rel="stylesheet" href="style.css?v=1.6">
+    <link rel="stylesheet" href="style.css?v=1.8">
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -52,36 +52,44 @@
                 <button class="close-btn" title="닫기"><i class="fas fa-times"></i></button>
             </div>
             <form id="item-form">
-                <div class="form-group">
-                    <label>이름</label>
-                    <input type="text" id="item-name" required placeholder="예: 우유, 휴지">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>이름</label>
+                        <input type="text" id="item-name" required placeholder="예: 우유, 휴지">
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="item-category">
+                            <option value="식품">🍎 식품</option>
+                            <option value="생필품">🧻 생필품</option>
+                            <option value="기타">🎁 기타</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>카테고리</label>
-                    <select id="item-category">
-                        <option value="식품">🍎 식품</option>
-                        <option value="생필품">🧻 생필품</option>
-                        <option value="기타">🎁 기타</option>
-                    </select>
-                </div>
+
                 <div class="form-group">
                     <label>쇼핑몰 링크 (선택)</label>
                     <input type="url" id="item-buy-url" placeholder="https://...">
                 </div>
-                <div class="form-group">
-                    <label>현재 수량</label>
-                    <input type="number" id="item-count" value="1" min="0">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>현재 수량</label>
+                        <input type="number" id="item-count" value="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>부족 알림 기준 (수량)</label>
+                        <input type="number" id="item-min-count" value="2" min="0">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>부족 알림 기준 (수량)</label>
-                    <input type="number" id="item-min-count" value="2" min="0">
-                    <p style="font-size: 0.7rem; color: var(--text-sub); margin-top: 5px;">이 수량 이하로 떨어지면 '부족함' 표시가 뜹니다.</p>
-                </div>
+                <p style="font-size: 0.7rem; color: var(--text-sub); margin-top: -10px; margin-bottom: 15px;">알림 기준 수량 이하로 떨어지면 🚨 표시가 뜹니다.</p>
+
                 <div class="form-group">
                     <label>자동 소비 주기 (일 단위)</label>
                     <input type="number" id="item-auto-period" value="0" min="0">
                     <p style="font-size: 0.7rem; color: var(--text-sub); margin-top: 5px;">설정한 날짜마다 수량이 1개씩 자동 차감됩니다. (0: 안 함)</p>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" id="delete-item-btn" class="delete-btn-premium" style="display:none;" title="품목 삭제">
                         <i class="fas fa-trash-alt"></i>
@@ -105,7 +113,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.6"></script>
+    <script src="script.js?v=1.8"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')

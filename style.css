@@ -451,40 +451,127 @@ main {
     gap: 12px;
     margin-top: 30px;
 }
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 .modal-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
     margin-top: 30px;
 }
 
-.delete-btn-premium {
-    width: 54px;
-    height: 54px;
-    background: #A31C23;
-    color: white;
+/* 두 버튼의 공통 스타일 (Gemma 4 마스터 베이스) */
+.delete-btn-premium, .submit-btn {
+    height: 48px;
     border: none;
-    border-radius: 16px;
-    font-size: 1.2rem;
+    border-radius: 16px; /* 더 고급스럽고 둥근 곡률 */
+    font-size: 0.95rem;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    padding: 0 20px;
+    line-height: 1;
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.delete-btn-premium:hover {
+.delete-btn-premium {
+    width: 60px; /* 아이콘 버튼으로서의 적정 너비 */
+    background: #9E3A5A;
+    color: white;
+    flex-shrink: 0;
+}
+
+.submit-btn {
+    flex: 1;
+    background: var(--primary);
+    color: white;
+}
+
+.delete-btn-premium:hover, .submit-btn:hover {
     transform: translateY(-2px);
-    background: #c2252d;
-    box-shadow: 0 6px 12px rgba(163, 28, 35, 0.3);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.18);
 }
 
-.delete-btn-premium:active {
-    transform: scale(0.95);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+.delete-btn-premium:active, .submit-btn:active {
+    transform: scale(0.96);
 }
+
+/* 다크 테마 공통 보완 */
+[data-theme="dark"] .delete-btn-premium,
+[data-theme="dark"] .submit-btn {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .modal-content {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .form-group input, 
+[data-theme="dark"] .form-group select {
+    background: #2a2a2a;
+    border-color: #3d3d3d;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .form-group label {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .modal-header h2 {
+    color: #ffffff;
+}
+
+.delete-btn-premium:hover, .submit-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.delete-btn-premium:active, .submit-btn:active {
+    transform: scale(0.97);
+}
+
+/* 다크 테마 모달 보완 */
+[data-theme="dark"] .modal-content {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .form-group input, 
+[data-theme="dark"] .form-group select {
+    background: #2a2a2a;
+    border-color: #3d3d3d;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .form-group label {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .modal-header h2 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .submit-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 .confirm-btns button {
     flex: 1;
     padding: 14px;
