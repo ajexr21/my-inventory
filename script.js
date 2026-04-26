@@ -84,6 +84,11 @@ async function initApp() {
         
         _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         await loadItems();
+        
+        // 알림 권한 요청
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
     } catch (e) {
         console.error('App init failed:', e);
     }
@@ -147,8 +152,25 @@ window.changeCount = async (id, delta) => {
 
     const newCount = Math.max(0, item.count + delta);
     const { error } = await _supabase.from('inventory').update({ count: newCount }).eq('id', id);
-    if (!error) await loadItems();
+    
+    if (!error) {
+        // 재고 부족 알림 체크
+        if (newCount <= item.min_count && delta < 0) {
+            showNotification(item.name, newCount);
+        }
+        await loadItems();
+    }
 };
+
+// 알림 띄우기 함수
+function showNotification(name, count) {
+    if (Notification.permission === 'granted') {
+        new Notification('🚨 재고 부족 알림', {
+            body: `[${name}]의 재고가 ${count}개 남았습니다. 보충이 필요해요!`,
+            icon: 'icon.png'
+        });
+    }
+}
 
 window.deleteItem = async (id) => {
     if (!_supabase) return;
