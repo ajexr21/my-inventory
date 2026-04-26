@@ -84,11 +84,6 @@ async function initApp() {
         
         _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         await loadItems();
-        
-        // 알림 권한 요청
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission();
-        }
     } catch (e) {
         console.error('App init failed:', e);
     }
@@ -132,6 +127,10 @@ function renderItems() {
                 <small>기준: ${item.min_count}개 이하</small>
             </div>
             <div class="item-controls">
+                ${item.buy_url ? `
+                <button class="control-btn buy-btn" onclick="window.open('${item.buy_url}', '_blank')" title="구매하러 가기">
+                    <i class="fas fa-shopping-cart"></i>
+                </button>` : ''}
                 <button class="control-btn" onclick="changeCount('${item.id}', -1)">-</button>
                 <span class="count">${item.count}</span>
                 <button class="control-btn" onclick="changeCount('${item.id}', 1)">+</button>
@@ -205,6 +204,7 @@ if (itemForm) {
         const newItem = {
             name: document.getElementById('item-name').value,
             category: document.getElementById('item-category').value,
+            buy_url: document.getElementById('item-buy-url').value,
             count: parseInt(document.getElementById('item-count').value),
             min_count: parseInt(document.getElementById('item-min-count').value)
         };
@@ -227,6 +227,25 @@ if (searchToggle) {
     searchToggle.onclick = () => {
         searchBar.classList.toggle('active');
         if (searchBar.classList.contains('active')) searchInput.focus();
+    };
+}
+
+const notificationBtn = document.getElementById('notification-btn');
+if (notificationBtn) {
+    notificationBtn.onclick = () => {
+        if (!("Notification" in window)) {
+            alert("이 브라우저는 알림을 지원하지 않습니다.");
+            return;
+        }
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                alert('알림 설정이 완료되었습니다! 재고가 부족하면 알려드릴게요. 🔔');
+                // 테스트 알림
+                new Notification('알림 설정 완료', { body: '이제 재고 부족 시 여기서 알림이 뜹니다.' });
+            } else {
+                alert('알림 권한이 거부되었습니다. 주소창 설정을 확인해 주세요.');
+            }
+        });
     };
 }
 
