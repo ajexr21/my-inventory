@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>우리집 가계부 | Home Finance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="icon" type="image/png" href="../icon.png">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <a href="../index.html" class="back-btn" title="홈으로 이동"><i class="fas fa-arrow-left-long"></i></a>
+                    <h1 class="premium-title">우리집 가계부</h1>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle" title="테마 변경"><i class="fas fa-moon"></i></button>
+                    <button id="search-toggle" title="검색하기"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+
+            <div class="search-bar" id="search-bar">
+                <input type="text" id="tr-search" placeholder="찾으시는 내역이 있나요?">
+            </div>
+
+            <div class="summary-card">
+                <div class="month-nav">
+                    <button id="prev-month" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <div class="month-display" id="month-display">
+                        <span id="current-month">2026년 4월</span>
+                    </div>
+                    <button id="next-month" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="summary-slim-header">
+                    <div class="mini-stat">이월 <span id="prev-balance">0원</span></div>
+                    <div class="mini-stat savings"><i class="fas fa-piggy-bank"></i> 누적저축 <span id="total-accumulated-savings">0원</span></div>
+                </div>
+
+                <div class="summary-main-grid">
+                    <div class="main-stat">
+                        <span class="label">이번 달 수입</span>
+                        <span id="total-income" class="value plus">0원</span>
+                    </div>
+                    <div class="main-stat">
+                        <span class="label">이번 달 저축</span>
+                        <span id="month-savings" class="value savings">0원</span>
+                    </div>
+                    <div class="main-stat">
+                        <span class="label">이번 달 지출</span>
+                        <span id="total-expense" class="value minus">0원</span>
+                    </div>
+                </div>
+
+                <div class="summary-footer">
+                    <span class="label">최종 잔액 (통장 잔고)</span>
+                    <span id="total-balance">0원</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="transaction-list">
+            <!-- 거래 내역이 여기에 동적으로 추가됩니다 -->
+            <div class="loading">데이터를 불러오고 있습니다...</div>
+        </main>
+    </div>
+
+    <div class="add-btn-container">
+        <button id="open-modal-btn"><i class="fas fa-plus"></i> 내역 추가하기</button>
+    </div>
+
+    <!-- 내역 추가 모달 -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">새 내역 추가</h2>
+                <button class="close-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="transaction-form">
+                <div class="type-selector">
+                    <input type="radio" id="type-expense" name="type" value="expense" checked>
+                    <label for="type-expense">지출</label>
+                    <input type="radio" id="type-income" name="type" value="income">
+                    <label for="type-income">수입</label>
+                </div>
+
+                <div class="form-group">
+                    <label>사용자</label>
+                    <div class="family-selector" id="family-selector">
+                        <div class="chip active" data-name="아빠">아빠</div>
+                        <div class="chip" data-name="엄마">엄마</div>
+                        <div class="chip" data-name="교현">교현</div>
+                        <div class="chip" data-name="교빈">교빈</div>
+                        <div class="chip" data-name="교은">교은</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>날짜</label>
+                    <input type="date" id="tr-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>내역</label>
+                    <input type="text" id="tr-description" required placeholder="예: 점심 식사, 급여">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>금액</label>
+                        <input type="text" id="tr-amount" required placeholder="0" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="tr-category">
+                            <option value="식비">🍔 식비</option>
+                            <option value="교통">🚗 교통</option>
+                            <option value="생활">🏠 생활</option>
+                            <option value="쇼핑">🛍️ 쇼핑</option>
+                            <option value="기타">🎁 기타</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <div class="modal-footer">
+                    <button type="button" id="delete-btn" class="delete-btn-premium" style="display:none;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button type="submit" class="submit-btn">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content confirm-content">
+            <i class="fas fa-exclamation-circle"
+                style="font-size: 40px; color: var(--accent-red); margin-bottom: 15px;"></i>
+            <h2>정말 삭제할까요?</h2>
+            <div class="confirm-btns">
+                <button id="confirm-cancel" class="btn-secondary">취소</button>
+                <button id="confirm-ok" class="btn-danger">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 월 선택 모달 -->
+    <div id="month-modal" class="modal">
+        <div class="modal-content month-picker-content">
+            <div class="modal-header">
+                <h2>연월 선택</h2>
+                <button class="close-month-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="year-selector">
+                <button id="prev-year"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="picker-year">2026</h3>
+                <button id="next-year"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="month-grid" id="month-grid">
+                <!-- 1~12월 버튼이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

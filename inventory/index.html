@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>우리집 편의점 | Family Mart</title>
+    <link rel="stylesheet" href="style.css?v=1.9">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="apple-touch-icon" href="../icon.png">
+    <link rel="icon" type="image/png" href="../icon.png">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="../index.html" class="back-btn" title="홈으로 이동"><i class="fas fa-arrow-left-long"></i></a>
+                <h1 class="premium-title">우리집 편의점</h1>
+            </div>
+                <div class="header-actions">
+                    <button id="notification-btn" title="알림 설정"><i class="fas fa-bell"></i></button>
+                    <button id="theme-toggle" title="테마 변경"><i class="fas fa-moon"></i></button>
+                    <button id="search-toggle"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <div class="search-bar" id="search-bar">
+                <input type="text" id="item-search" placeholder="찾으시는 물건이 있나요?">
+            </div>
+            <div class="category-tabs-wrapper">
+                <div class="category-tabs">
+                    <button class="tab active" data-category="전체">전체</button>
+                    <button class="tab" data-category="부족함">🚨 부족함</button>
+                    <button class="tab" data-category="식품">🍎 식품</button>
+                    <button class="tab" data-category="생필품">🧻 생필품</button>
+                    <button class="tab" data-category="기타">🎁 기타</button>
+                </div>
+            </div>
+        </header>
+
+        <main id="inventory-list">
+            <!-- 품목 카드가 여기에 동적으로 추가됩니다 -->
+        </main>
+    </div>
+
+
+    <div class="add-btn-container">
+        <button id="open-modal-btn"><i class="fas fa-plus"></i> 품목 추가하기</button>
+    </div>
+
+    <!-- 품목 추가 모달 -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>새 물건 추가</h2>
+                <button class="close-btn" title="닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="item-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>이름</label>
+                        <input type="text" id="item-name" required placeholder="예: 우유, 휴지">
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="item-category">
+                            <option value="식품">🍎 식품</option>
+                            <option value="생필품">🧻 생필품</option>
+                            <option value="기타">🎁 기타</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>쇼핑몰 링크 (선택)</label>
+                    <input type="url" id="item-buy-url" placeholder="https://...">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>현재 수량</label>
+                        <input type="number" id="item-count" value="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>부족 알림 기준 (수량)</label>
+                        <input type="number" id="item-min-count" value="2" min="0">
+                    </div>
+                </div>
+                <p style="font-size: 0.7rem; color: var(--text-sub); margin-top: -10px; margin-bottom: 15px;">알림 기준 수량
+                    이하로 떨어지면 🚨 표시가 뜹니다.</p>
+
+                <div class="form-group">
+                    <label>자동 소비 주기 (일 단위)</label>
+                    <input type="number" id="item-auto-period" value="0" min="0">
+                    <p style="font-size: 0.7rem; color: var(--text-sub); margin-top: 5px;">설정한 날짜마다 수량이 1개씩 자동 차감됩니다.
+                        (0: 안 함)</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="delete-item-btn" class="delete-btn-premium" style="display:none;"
+                        title="품목 삭제">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button type="submit" class="submit-btn">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 커스텀 확인 팝업 (Confirm Modal) -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content confirm-content">
+            <div class="confirm-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <h2 id="confirm-title">정말 삭제할까요?</h2>
+            <p id="confirm-message">이 작업은 취소할 수 없습니다.</p>
+            <div class="confirm-btns">
+                <button id="confirm-cancel" class="btn-secondary">취소</button>
+                <button id="confirm-ok" class="btn-danger">삭제하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=1.8"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('../sw.js')
+                .then(reg => console.log('Service Worker Registered', reg))
+                .catch(err => console.log('Service Worker Failed', err));
+        }
+    </script>
+
+</body>
+
+</html>
