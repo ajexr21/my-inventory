@@ -79,13 +79,22 @@ h1 {
     gap: 15px;
 }
 
-#theme-toggle, #search-toggle {
+#theme-toggle, #search-toggle, #notification-btn {
     background: none;
     border: none;
     color: var(--primary);
     font-size: 1.2rem;
     cursor: pointer;
     transition: 0.3s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#theme-toggle:hover, #search-toggle:hover, #notification-btn:hover {
+    transform: scale(1.1);
+    color: var(--accent);
 }
 
 #theme-toggle:hover {
@@ -128,21 +137,29 @@ h1 {
 .tab {
     padding: 8px 18px;
     border-radius: 20px;
-    border: 1.5px solid var(--secondary);
-    background: var(--white);
-    white-space: nowrap;
-    font-size: 0.85rem;
-    font-weight: 600;
+    background: var(--bg-card);
+    border: 1px solid var(--secondary);
     color: var(--text-sub);
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: var(--transition-premium, 0.3s);
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: var(--shadow-sm);
 }
 
 .tab.active {
     background: var(--primary);
-    color: #fff;
+    color: white;
     border-color: var(--primary);
-    box-shadow: 0 4px 10px rgba(196, 164, 132, 0.3);
+    font-weight: 700;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tab:hover:not(.active) {
+    background: var(--secondary);
+    color: var(--text-main);
 }
 
 /* Inventory List */

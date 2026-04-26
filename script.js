@@ -106,7 +106,15 @@ function renderItems() {
     if (!itemList) return;
     itemList.innerHTML = '';
     const filtered = items.filter(item => {
-        const matchesCategory = currentCategory === '전체' || item.category === currentCategory;
+        let matchesCategory = false;
+        if (currentCategory === '전체') {
+            matchesCategory = true;
+        } else if (currentCategory === '부족함') {
+            matchesCategory = item.count <= item.min_count;
+        } else {
+            matchesCategory = item.category === currentCategory;
+        }
+        
         const matchesSearch = item.name.toLowerCase().includes(searchInput.value.toLowerCase());
         return matchesCategory && matchesSearch;
     });
