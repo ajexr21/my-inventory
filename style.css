@@ -470,35 +470,46 @@ main {
     margin-top: 30px;
 }
 
-/* 두 버튼의 공통 스타일 (Gemma 4 마스터 베이스) */
+/* 두 버튼의 공통 스타일 (Gemma 4 최종 물리적 고정 사양) */
 .delete-btn-premium, .submit-btn {
-    height: 48px;
-    border: none;
-    border-radius: 16px; /* 더 고급스럽고 둥근 곡률 */
+    appearance: none;
+    -webkit-appearance: none; /* 브라우저 기본 스타일 완전 해제 */
+    
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important; /* 물리적 높이 강제 고정 */
+    
+    margin: 0 !important; /* 혹시 모를 외부 여백 차단 */
+    padding: 0 20px !important;
+    border: none !important;
+    border-radius: 16px !important;
+    
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
+    
     display: flex;
     justify-content: center;
     align-items: center;
-    box-sizing: border-box;
-    padding: 0 20px;
-    line-height: 1;
+    align-self: center; /* 스스로 수직 중앙 정렬 */
+    
+    box-sizing: border-box !important;
+    line-height: 1 !important;
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .delete-btn-premium {
-    width: 60px; /* 아이콘 버튼으로서의 적정 너비 */
-    background: #9E3A5A;
-    color: white;
+    width: 60px !important;
+    background: #9E3A5A !important;
+    color: white !important;
     flex-shrink: 0;
 }
 
 .submit-btn {
     flex: 1;
-    background: var(--primary);
-    color: white;
+    background: var(--primary) !important;
+    color: white !important;
 }
 
 .delete-btn-premium:hover, .submit-btn:hover {
