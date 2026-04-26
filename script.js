@@ -254,6 +254,17 @@ window.openEditModal = (id) => {
     document.getElementById('item-min-count').value = item.min_count;
     document.getElementById('item-auto-period').value = item.auto_period || 0;
     
+    // Gemma 4 제안: 다음 차감 예정일 안내 추가
+    const periodGuide = document.querySelector('#item-auto-period + p');
+    if (item.auto_period > 0) {
+        const lastCheck = new Date(item.last_check_date || item.created_at);
+        const nextCheck = new Date(lastCheck.getTime() + (item.auto_period * 1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((nextCheck - new Date()) / (1000 * 60 * 60 * 24));
+        periodGuide.innerHTML = `설정한 날짜마다 수량이 1개씩 자동 차감됩니다. <br><strong style="color:var(--primary)">👉 다음 차감까지 약 ${Math.max(0, diffDays)}일 남았습니다.</strong>`;
+    } else {
+        periodGuide.innerText = '설정한 날짜마다 수량이 1개씩 자동 차감됩니다. (0: 안 함)';
+    }
+    
     document.getElementById('delete-item-btn').style.display = 'block';
     addModal.classList.add('active');
 };

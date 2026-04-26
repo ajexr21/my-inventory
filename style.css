@@ -453,23 +453,37 @@ main {
 }
 .modal-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    margin-top: 25px;
+    gap: 12px;
+    margin-top: 30px;
 }
 
-.delete-btn-link {
-    background: none;
+.delete-btn-premium {
+    width: 54px;
+    height: 54px;
+    background: #A31C23;
+    color: white;
     border: none;
-    color: var(--text-sub);
-    font-size: 0.85rem;
-    text-decoration: underline;
+    border-radius: 16px;
+    font-size: 1.2rem;
     cursor: pointer;
-    transition: color 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.delete-btn-link:hover {
-    color: var(--primary);
+.delete-btn-premium:hover {
+    transform: translateY(-2px);
+    background: #c2252d;
+    box-shadow: 0 6px 12px rgba(163, 28, 35, 0.3);
+}
+
+.delete-btn-premium:active {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 .confirm-btns button {
     flex: 1;
