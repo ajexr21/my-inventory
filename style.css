@@ -208,7 +208,7 @@ main {
     align-items: center;
     border: 1px solid rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* 특정 속성으로 제한 */
+    transition: none; /* 모든 애니메이션 제거 */
 }
 
 .item-card:hover {
