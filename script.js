@@ -10,6 +10,7 @@ let _supabase = null;
 
 let items = [];
 let currentCategory = '전체';
+let editingId = null; // 수정 중인 품목 ID 추적
 
 // --- 2. 테마 관리 (최우선 실행) ---
 const themeToggle = document.getElementById('theme-toggle');
@@ -177,8 +178,8 @@ window.renderItems = () => {
                 <button class="control-btn" onclick="changeCount('${item.id}', -1)">-</button>
                 <span class="count">${item.count}</span>
                 <button class="control-btn" onclick="changeCount('${item.id}', 1)">+</button>
-                <button class="control-btn" style="background:none; color:var(--text-sub); margin-left:10px;" onclick="deleteItem('${item.id}')">
-                    <i class="fas fa-trash"></i>
+                <button class="control-btn" style="background:none; color:var(--text-sub); margin-left:10px;" onclick="openEditModal('${item.id}')">
+                    <i class="fas fa-cog"></i>
                 </button>
             </div>
         `;
@@ -239,12 +240,30 @@ window.deleteItem = async (id) => {
     }
 };
 
+// 수정 모달 열기
+window.openEditModal = (id) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    editingId = id;
+    document.querySelector('#item-modal h2').innerText = '품목 수정';
+    document.getElementById('item-name').value = item.name;
+    document.getElementById('item-category').value = item.category;
+    document.getElementById('item-buy-url').value = item.buy_url || '';
+    document.getElementById('item-count').value = item.count;
+    document.getElementById('item-min-count').value = item.min_count;
+    document.getElementById('item-auto-period').value = item.auto_period || 0;
+    
+    document.getElementById('delete-item-btn').style.display = 'block';
+    addModal.classList.add('active');
+};
+
 if (itemForm) {
     itemForm.onsubmit = async (e) => {
         e.preventDefault();
         if (!_supabase) { alert('DB가 연결되지 않았습니다.'); return; }
         
-        const newItem = {
+        const itemData = {
             name: document.getElementById('item-name').value,
             category: document.getElementById('item-category').value,
             buy_url: document.getElementById('item-buy-url').value,
@@ -254,19 +273,50 @@ if (itemForm) {
             last_check_date: new Date().toISOString()
         };
 
-        const { error } = await _supabase.from('inventory').insert([newItem]);
+        let error;
+        if (editingId) {
+            // 수정 모드
+            const result = await _supabase.from('inventory').update(itemData).eq('id', editingId);
+            error = result.error;
+        } else {
+            // 추가 모드
+            const result = await _supabase.from('inventory').insert([itemData]);
+            error = result.error;
+        }
+
         if (!error) {
             itemForm.reset();
             addModal.classList.remove('active');
             await loadItems();
+        } else {
+            alert('저장에 실패했습니다.');
         }
     };
 }
 
 // UI 인터랙션
-if (openModalBtn) openModalBtn.onclick = () => addModal.classList.add('active');
+if (openModalBtn) {
+    openModalBtn.onclick = () => {
+        editingId = null;
+        document.querySelector('#item-modal h2').innerText = '새 물건 추가';
+        itemForm.reset();
+        document.getElementById('delete-item-btn').style.display = 'none';
+        addModal.classList.add('active');
+    };
+}
 if (closeModalBtn) closeModalBtn.onclick = () => addModal.classList.remove('active');
 window.onclick = (e) => { if (e.target === addModal) addModal.classList.remove('active'); };
+
+// 모달 내 삭제 버튼
+const deleteItemBtn = document.getElementById('delete-item-btn');
+if (deleteItemBtn) {
+    deleteItemBtn.onclick = async () => {
+        if (editingId) {
+            await window.deleteItem(editingId);
+            addModal.classList.remove('active');
+        }
+    };
+}
 
 if (searchToggle) {
     searchToggle.onclick = () => {

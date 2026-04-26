@@ -451,7 +451,26 @@ main {
     gap: 12px;
     margin-top: 30px;
 }
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+}
 
+.delete-btn-link {
+    background: none;
+    border: none;
+    color: var(--text-sub);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.delete-btn-link:hover {
+    color: var(--primary);
+}
 .confirm-btns button {
     flex: 1;
     padding: 14px;
