@@ -84,6 +84,15 @@ async function initApp() {
         
         _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         await loadItems();
+        
+        // 실시간 구독 설정
+        _supabase
+            .channel('inventory-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+                console.log('Realtime update received!', payload);
+                loadItems(); // 변화가 생기면 즉시 목록 새로고침
+            })
+            .subscribe();
     } catch (e) {
         console.error('App init failed:', e);
     }
