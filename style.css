@@ -217,8 +217,21 @@ main {
 }
 
 .item-info h3 {
-    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.15rem;
     margin-bottom: 4px;
+}
+
+.shortage-badge {
+    font-size: 0.9rem;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
 }
 
 .item-info p {

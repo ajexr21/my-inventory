@@ -83,6 +83,7 @@ async function initApp() {
         }
         
         _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        await applyAutoDeduct(); // 자동 차감 엔진 실행
         await loadItems();
         
         // 실시간 구독 설정
@@ -111,7 +112,33 @@ async function loadItems() {
     }
 }
 
-function renderItems() {
+async function applyAutoDeduct() {
+    const { data: items, error } = await _supabase.from('inventory').select('*').gt('auto_period', 0);
+    if (error || !items) return;
+
+    const now = new Date();
+    for (const item of items) {
+        const lastCheck = new Date(item.last_check_date || item.created_at);
+        const diffDays = Math.floor((now - lastCheck) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays >= item.auto_period) {
+            const deductCount = Math.floor(diffDays / item.auto_period);
+            const newCount = Math.max(0, item.count - deductCount);
+            
+            // DB 업데이트: 수량 차감 및 마지막 체크일 갱신
+            await _supabase.from('inventory').update({ 
+                count: newCount, 
+                last_check_date: now.toISOString() 
+            }).eq('id', item.id);
+            
+            if (deductCount > 0) {
+                showNotification(`📢 소비 주기 알림`, `[${item.name}]이 소비 주기에 따라 ${deductCount}개 차감되었습니다.`);
+            }
+        }
+    }
+}
+
+window.renderItems = () => {
     if (!itemList) return;
     itemList.innerHTML = '';
     const filtered = items.filter(item => {
@@ -139,9 +166,8 @@ function renderItems() {
         card.className = 'item-card';
         card.innerHTML = `
             <div class="item-info">
-                <h3>${item.name}</h3>
-                <p>${item.category} ${isLow ? '• <span style="color:var(--primary)">부족함!</span>' : ''}</p>
-                <small>기준: ${item.min_count}개 이하</small>
+                <h3>${item.name} ${isLow ? '<span class="shortage-badge">🚨</span>' : ''}</h3>
+                <p>${item.category}</p>
             </div>
             <div class="item-controls">
                 ${item.buy_url ? `
@@ -223,7 +249,9 @@ if (itemForm) {
             category: document.getElementById('item-category').value,
             buy_url: document.getElementById('item-buy-url').value,
             count: parseInt(document.getElementById('item-count').value),
-            min_count: parseInt(document.getElementById('item-min-count').value)
+            min_count: parseInt(document.getElementById('item-min-count').value),
+            auto_period: parseInt(document.getElementById('item-auto-period').value) || 0,
+            last_check_date: new Date().toISOString()
         };
 
         const { error } = await _supabase.from('inventory').insert([newItem]);
