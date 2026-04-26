@@ -164,10 +164,26 @@ window.changeCount = async (id, delta) => {
 
 // 알림 띄우기 함수
 function showNotification(name, count) {
+    console.log('Notification trigger:', name, count); // 진단용 로그
+    
+    if (!("Notification" in window)) {
+        alert("이 브라우저는 알림을 지원하지 않습니다.");
+        return;
+    }
+
     if (Notification.permission === 'granted') {
-        new Notification('🚨 재고 부족 알림', {
+        const options = {
             body: `[${name}]의 재고가 ${count}개 남았습니다. 보충이 필요해요!`,
-            icon: 'icon.png'
+            icon: 'icon.png',
+            badge: 'icon.png',
+            vibrate: [200, 100, 200]
+        };
+        new Notification('🚨 재고 부족 알림', options);
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification(name, count);
+            }
         });
     }
 }
