@@ -122,14 +122,42 @@ h1 {
     font-size: 0.95rem;
 }
 
-/* Category Tabs */
+/* Category Tabs Container with Scroll Hint */
+.category-tabs-wrapper {
+    position: relative;
+    max-width: 600px;
+    margin: 15px auto 0;
+}
+
+.category-tabs-wrapper::before,
+.category-tabs-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.category-tabs-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-main), transparent);
+}
+
+.category-tabs-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, var(--bg-main), transparent);
+}
+
 .category-tabs {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    max-width: 600px;
-    margin: 15px auto 0;
-    padding-bottom: 10px;
+    padding: 10px 20px 15px; /* 상단 패딩 증가로 잘림 방지 */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
 }
 
 .category-tabs::-webkit-scrollbar { display: none; }
