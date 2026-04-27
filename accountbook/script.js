@@ -46,13 +46,20 @@ async function initApp() {
         
         await loadTransactions();
         
-        // 실시간 구독
+        // 실시간 구독 (다른 기기에서 변경 시 즉시 반영)
         _supabase
             .channel('account-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'account_book' }, () => {
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'account_book' 
+            }, (payload) => {
+                console.log('실시간 변경 감지됨:', payload);
                 loadTransactions();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('실시간 구독 상태:', status);
+            });
     } catch (e) {
         console.error('Init failed:', e);
     }
