@@ -5,6 +5,8 @@ let _supabase = null;
 let transactions = [];
 let editingId = null;
 let viewDate = new Date(); // 현재 보고 있는 달
+let currentPrevBalance = 0;
+let currentTotalSavings = 0;
 
 // --- 1. 테마 관리 ---
 const themeToggle = document.getElementById('theme-toggle');
@@ -217,9 +219,12 @@ async function loadTransactions() {
         allSavingsData.forEach(d => {
             totalAccumulatedSavings += d.amount;
         });
+        
+        currentPrevBalance = prevBalance;
+        currentTotalSavings = totalAccumulatedSavings;
 
         renderTransactions();
-        updateSummary(prevBalance, totalAccumulatedSavings);
+        updateSummary(monthData, currentPrevBalance, currentTotalSavings);
     } else {
         console.error('Load error:', monthError || prevError || savingsError);
         document.getElementById('transaction-list').innerHTML = '<div class="loading">데이터를 불러올 수 없습니다.</div>';
@@ -255,12 +260,12 @@ function animateCount(elementId, start, end) {
     requestAnimationFrame(update);
 }
 
-function updateSummary(prevBalance = 0, totalAccumulatedSavings = 0) {
+function updateSummary(data, prevBalance = 0, totalAccumulatedSavings = 0, isSearch = false) {
     let income = 0;
     let monthSavings = 0;
     let consumption = 0;
     
-    transactions.forEach(t => {
+    data.forEach(t => {
         if (t.type === 'income') {
             income += t.amount;
         } else {
@@ -272,20 +277,38 @@ function updateSummary(prevBalance = 0, totalAccumulatedSavings = 0) {
         }
     });
 
-    // 최종 잔액 계산: (이월 + 수입) - (저축 + 소비)
-    const totalBalance = prevBalance + income - (monthSavings + consumption);
+    // 검색 중일 때는 이월 금액을 0으로 처리하거나 제외 (검색 결과의 순수 합계만 표시)
+    const effectivePrevBalance = isSearch ? 0 : prevBalance;
+    const totalBalance = effectivePrevBalance + income - (monthSavings + consumption);
+
+    // 라벨 업데이트
+    const labels = {
+        income: isSearch ? '검색 수입' : '이번 달 수입',
+        savings: isSearch ? '검색 저축' : '이번 달 저축',
+        expense: isSearch ? '검색 지출' : '이번 달 지출',
+        balance: isSearch ? '검색 결과 합계' : '최종 잔액 (통장 잔고)',
+        prev: isSearch ? '필터 적용됨' : '이월'
+    };
+
+    document.querySelectorAll('.main-stat .label')[0].innerText = labels.income;
+    document.querySelectorAll('.main-stat .label')[1].innerText = labels.savings;
+    document.querySelectorAll('.main-stat .label')[2].innerText = labels.expense;
+    document.querySelector('.summary-footer .label').innerText = labels.balance;
+    document.querySelector('.mini-stat').childNodes[0].textContent = labels.prev + ' ';
 
     // 애니메이션 실행
-    animateCount('prev-balance', prevValues.prev, prevBalance);
+    animateCount('prev-balance', prevValues.prev, effectivePrevBalance);
     animateCount('total-income', prevValues.income, income);
     animateCount('month-savings', prevValues.monthSavings, monthSavings);
     animateCount('total-expense', prevValues.expense, consumption);
     animateCount('total-balance', prevValues.total, totalBalance);
+    
+    // 누적 저축은 검색과 무관하게 유지하거나 필요 시 0 처리 (여기서는 유지)
     animateCount('total-accumulated-savings', prevValues.totalSavings, totalAccumulatedSavings);
 
     // 현재 값을 저장
     prevValues = {
-        prev: prevBalance,
+        prev: effectivePrevBalance,
         income: income,
         monthSavings: monthSavings,
         expense: consumption,
@@ -325,6 +348,14 @@ function renderTransactions() {
             });
         });
     });
+
+    // 검색 결과에 따른 요약 업데이트
+    if (searchTerm) {
+        updateSummary(filtered, 0, currentTotalSavings, true);
+    } else {
+        // 검색어가 없으면 다시 이번 달 전체 요약으로 복구
+        updateSummary(transactions, currentPrevBalance, currentTotalSavings, false);
+    }
 
     if (filtered.length === 0) {
         list.innerHTML = transactions.length === 0 
