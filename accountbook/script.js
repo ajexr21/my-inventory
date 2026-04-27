@@ -189,7 +189,8 @@ async function loadTransactions() {
         .select('*')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('id', { ascending: false });
 
     // 2. 이월 금액 계산 (이번 달 시작 전까지의 모든 합계)
     const { data: prevData, error: prevError } = await _supabase
@@ -320,13 +321,16 @@ function renderTransactions() {
         item.className = 'transaction-item';
         item.onclick = () => openEditModal(t);
         
-        const date = new Date(t.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+        const dateObj = new Date(t.created_at || t.date);
+        const date = dateObj.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+        const time = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const fullDateDisplay = `${date} <small style="opacity:0.8;">${time}</small>`;
         const userName = t.user_name ? `<small style="color:var(--primary); font-weight:bold;">${t.user_name}</small> ` : '';
         
         item.innerHTML = `
             <div class="tr-info">
                 <h3>${userName}${t.description}</h3>
-                <p>${date} • ${t.category}</p>
+                <p>${fullDateDisplay} • ${t.category}</p>
             </div>
             <div class="tr-amount ${t.type === 'income' ? 'plus' : 'minus'}">
                 ${t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}원
