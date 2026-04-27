@@ -495,8 +495,22 @@ document.getElementById('confirm-cancel').onclick = () => confirmModal.classList
 document.getElementById('confirm-ok').onclick = async () => {
     if (!editingId || !_supabase) return;
     
+    // 삭제할 데이터 정보 미리 가져오기
+    const target = transactions.find(t => t.id === editingId);
+    
     const { error } = await _supabase.from('account_book').delete().eq('id', editingId);
     if (!error) {
+        // 텔레그램 알림 발송
+        if (target) {
+            const msg = `<b>🗑️ [가계부 내역 삭제]</b>\n` +
+                        `대상: ${target.user_name}\n` +
+                        `내용: ${target.description}\n` +
+                        `금액: ${target.amount.toLocaleString()}원\n` +
+                        `카테고리: ${target.category}\n` +
+                        `<i>데이터가 영구 삭제되었습니다.</i>`;
+            sendTelegramMessage(msg);
+        }
+        
         confirmModal.classList.remove('active');
         modal.classList.remove('active');
         loadTransactions();

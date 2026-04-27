@@ -152,9 +152,7 @@ async function applyAutoDeduct() {
             }).eq('id', item.id);
             
             if (deductCount > 0) {
-                const msg = `<b>📦 [편의점 매대 알림]</b>\n[${item.name}]이(가) 회전 주기에 따라 ${deductCount}개 자동 차감되었습니다. (현재 재고: ${newCount}개)`;
                 showNotification(`📢 편의점 매대 알림`, `[${item.name}]이 편의점 매대 회전 주기에 따라 ${deductCount}개 판매/사용되었습니다.`);
-                sendTelegramMessage(msg);
             }
         }
     }
@@ -295,6 +293,7 @@ function showNotification(name, count) {
 
 window.deleteItem = async (id) => {
     if (!_supabase) return;
+    const item = items.find(i => i.id === id);
     const confirmed = await showConfirm('정말 삭제할까요?');
     if (confirmed) {
         const { error } = await _supabase.from('inventory').delete().eq('id', id);
