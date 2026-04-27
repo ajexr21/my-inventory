@@ -1,5 +1,7 @@
 const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
+const TELEGRAM_TOKEN = '8602265566:AAFdUXXrm3ILahVrWANG6prjy2-Vu0OgeL4';
+const TELEGRAM_CHAT_ID = '8731103204';
 let _supabase = null;
 
 let transactions = [];
@@ -109,6 +111,23 @@ async function initApp() {
     document.getElementById('prev-year').onclick = () => changePickerYear(-1);
     document.getElementById('next-year').onclick = () => changePickerYear(1);
     document.querySelector('.close-month-btn').onclick = () => document.getElementById('month-modal').classList.remove('active');
+}
+
+async function sendTelegramMessage(text) {
+    try {
+        const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch (e) {
+        console.error('Telegram notification failed:', e);
+    }
 }
 
 let pickerYear = new Date().getFullYear();
@@ -450,6 +469,16 @@ form.onsubmit = async (e) => {
     if (!error) {
         modal.classList.remove('active');
         loadTransactions();
+        
+        // 텔레그램 알림 발송
+        const typeLabel = formData.type === 'income' ? '💰 수입' : '💸 지출';
+        const msg = `<b>[가계부 알림]</b>\n` +
+                    `대상: ${formData.user_name}\n` +
+                    `구분: ${typeLabel}\n` +
+                    `내용: ${formData.description}\n` +
+                    `금액: ${formData.amount.toLocaleString()}원\n` +
+                    `카테고리: ${formData.category}`;
+        sendTelegramMessage(msg);
     } else {
         alert('저장에 실패했습니다.');
     }

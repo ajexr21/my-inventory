@@ -6,6 +6,8 @@
 // --- 1. 기본 설정 및 상태 ---
 const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
+const TELEGRAM_TOKEN = '8602265566:AAFdUXXrm3ILahVrWANG6prjy2-Vu0OgeL4';
+const TELEGRAM_CHAT_ID = '8731103204';
 let _supabase = null;
 
 let items = [];
@@ -100,6 +102,23 @@ async function initApp() {
     }
 }
 
+async function sendTelegramMessage(text) {
+    try {
+        const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch (e) {
+        console.error('Telegram notification failed:', e);
+    }
+}
+
 async function loadItems() {
     if (!_supabase) return;
     const { data, error } = await _supabase
@@ -133,7 +152,9 @@ async function applyAutoDeduct() {
             }).eq('id', item.id);
             
             if (deductCount > 0) {
+                const msg = `<b>📦 [편의점 매대 알림]</b>\n[${item.name}]이(가) 회전 주기에 따라 ${deductCount}개 자동 차감되었습니다. (현재 재고: ${newCount}개)`;
                 showNotification(`📢 편의점 매대 알림`, `[${item.name}]이 편의점 매대 회전 주기에 따라 ${deductCount}개 판매/사용되었습니다.`);
+                sendTelegramMessage(msg);
             }
         }
     }
@@ -266,6 +287,10 @@ function showNotification(name, count) {
             }
         });
     }
+
+    // 텔레그램으로도 전송
+    const telegramMsg = `<b>🚨 [물품 부족 알림]</b>\n품명: ${name}\n현재 재고: ${count}개\n보충이 시급합니다!`;
+    sendTelegramMessage(telegramMsg);
 }
 
 window.deleteItem = async (id) => {
