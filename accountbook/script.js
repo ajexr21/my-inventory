@@ -300,12 +300,30 @@ function renderTransactions() {
     
     const searchTerm = document.getElementById('tr-search')?.value.toLowerCase() || '';
     
-    // 검색 필터링 적용
+    // 고급 검색 로직 적용
     const filtered = transactions.filter(t => {
-        const desc = t.description.toLowerCase();
-        const user = (t.user_name || '').toLowerCase();
-        const cat = (t.category || '').toLowerCase();
-        return desc.includes(searchTerm) || user.includes(searchTerm) || cat.includes(searchTerm);
+        if (!searchTerm) return true;
+        
+        // 검색 대상 텍스트 통합 (설명, 사용자, 카테고리, 타입)
+        const typeKo = t.type === 'income' ? '수입' : '지출';
+        const targetText = `${t.description} ${t.user_name || ''} ${t.category || ''} ${typeKo}`.toLowerCase();
+        
+        // OR(|) 단위로 먼저 분리
+        const orGroups = searchTerm.split('|').filter(g => g.trim());
+        
+        return orGroups.some(group => {
+            // AND(&) 단위로 분리
+            const andTerms = group.split('&').filter(t => t.trim());
+            
+            return andTerms.every(term => {
+                const trimmedTerm = term.trim();
+                if (trimmedTerm.startsWith('!')) {
+                    const excludeTerm = trimmedTerm.substring(1).trim();
+                    return excludeTerm ? !targetText.includes(excludeTerm) : true;
+                }
+                return targetText.includes(trimmedTerm);
+            });
+        });
     });
 
     if (filtered.length === 0) {
