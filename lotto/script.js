@@ -238,40 +238,54 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (vData) {
-                const parts = vData.split('m');
-                const round = parseInt(parts[0], 10);
-                
-                const games = [];
-                for (let i = 1; i < parts.length; i++) {
-                    let gameStr = parts[i];
-                    // 게임 데이터는 최소 12자리(번호 6개)여야 함
-                    // 끝에 일련번호가 붙어 있을 수 있으므로 앞의 12자리만 사용
-                    if (gameStr.length >= 12) {
-                        const nums = [];
-                        for (let j = 0; j < 12; j += 2) {
-                            const num = parseInt(gameStr.substring(j, j + 2), 10);
-                            if (!isNaN(num)) nums.push(num);
-                        }
-                        if (nums.length === 6) {
-                            games.push(nums);
-                        }
-                    }
+                // 연금복권 패턴 감지 (p로 시작하는 경우)
+                if (vData.startsWith('p')) {
+                    qrReaderDiv.innerHTML = '<p style="padding: 20px; color: #ff4757;">연금복권 QR코드입니다.<br><span style="font-size:12px;">현재는 로또 6/45 스캔만 지원합니다.</span></p>';
+                    setTimeout(startScanner, 3000);
+                    return;
                 }
 
-    if (games.length > 0) {
-        addLottoTicket(round, games);
-        // 내 로또 탭으로 자동 이동
-        document.querySelector('[data-target="tab-list"]').click();
-    } else {
-        // 실패 시 안내 후 다시 스캔 시도
-        console.error("Number extraction failed for data:", vData);
-        qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">번호를 읽어오지 못했습니다. 다시 시도해주세요.</p>';
-        setTimeout(startScanner, 2000);
-    }
-} else {
-    qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">올바른 로또 QR 코드가 아닙니다.</p>';
-    setTimeout(startScanner, 2000);
-}
+                // 로또 6/45 유니버셜 파싱 (구분자 m이 없거나 다른 경우도 대비)
+                // 패턴: 회차(숫자) + 구분자 + 번호들(12자리씩)
+                const roundMatch = vData.match(/^(\d+)/);
+                if (!roundMatch) {
+                    qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">회차 정보를 찾을 수 없는 QR입니다.</p>';
+                    setTimeout(startScanner, 2000);
+                    return;
+                }
+
+                const round = parseInt(roundMatch[1], 10);
+                const games = [];
+                
+                // vData에서 12자리 숫자(로또 번호 6개) 패턴을 모두 찾음
+                const gameMatches = vData.match(/\d{12}/g);
+                
+                if (gameMatches) {
+                    gameMatches.forEach(gameStr => {
+                        // 첫 번째 매치가 회차 번호를 포함한 일부일 수 있으므로 검증
+                        // (보통 회차는 4자리이므로 12자리 숫자 세트와 확연히 구분됨)
+                        if (gameStr !== roundMatch[1].padEnd(12, '0')) { 
+                            const nums = [];
+                            for (let j = 0; j < 12; j += 2) {
+                                const num = parseInt(gameStr.substring(j, j + 2), 10);
+                                if (!isNaN(num) && num >= 1 && num <= 45) nums.push(num);
+                            }
+                            if (nums.length === 6) {
+                                games.push(nums);
+                            }
+                        }
+                    });
+                }
+
+                if (games.length > 0) {
+                    addLottoTicket(round, games);
+                    document.querySelector('[data-target="tab-list"]').click();
+                } else {
+                    console.error("Number extraction failed for data:", vData);
+                    qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">번호 추출에 실패했습니다.<br><span style="font-size:12px;">올바른 로또 QR인지 확인해주세요.</span></p>';
+                    setTimeout(startScanner, 3000);
+                }
+            }
         } else {
             // 로또 QR이 아닌 경우
             qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">동행복권 로또 QR 코드가 아닙니다.</p>';
