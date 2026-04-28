@@ -539,10 +539,32 @@
                 const lottoMsg = document.getElementById('lotto-preview-message');
                 if (winningLottoGames > 0) {
                     lottoMsg.innerHTML = `<span style="color:var(--accent-green); font-weight:bold;">축하합니다! ${winningLottoGames}개의 게임이 당첨되었어요! 🎊</span>`;
-                } else if (totalLottoGames > 0) {
-                    lottoMsg.innerText = `현재 ${totalLottoGames}개의 게임이 행운을 기다리고 있어요! 🍀`;
                 } else {
-                    lottoMsg.innerText = '아직 등록된 로또가 없어요. QR코드를 스캔해보세요! ✨';
+                    const luckyMessages = [
+                        "이번 주 1등의 주인공은 바로 당신입니다! 🏆",
+                        "당신에게 곧 눈부신 행운이 쏟아질 거예요. ✨",
+                        "오늘따라 당신의 미소에서 대박의 기운이 느껴지네요! 😊",
+                        "우주의 기운이 당신의 번호들로 모이고 있습니다. 🌌",
+                        "포기하지 마세요, 행운은 예고 없이 찾아오니까요! 🍀",
+                        "이미 당신은 충분히 행복할 자격이 있는 사람입니다. ❤️",
+                        "황금빛 미래가 당신을 향해 성큼성큼 다가오고 있어요. 💰",
+                        "기분 좋은 예감이 드네요! 오늘 하루도 화이팅! 🌈",
+                        "당신의 끈기가 마침내 커다란 결실을 맺을 시간입니다. 🍎",
+                        "이번 주엔 정말 좋은 일이 생길 것만 같아요! 🧧",
+                        "복권 명당의 기운을 담아 당신의 당첨을 응원합니다! 🏛️",
+                        "당신의 꿈이 현실이 되는 그날까지 함께할게요. 🌟",
+                        "간절히 바라면 온 우주가 당신을 도와줄 거예요. 🔭",
+                        "오늘 스캔한 그 번호가 당신의 인생을 바꿀지도 몰라요! 🚀",
+                        "행운의 여신이 당신의 어깨 위에 살포시 앉아 있네요. 🧚",
+                        "작은 희망이 모여 거대한 기적이 됩니다. 🌱",
+                        "당신은 세상에서 가장 운이 좋은 사람입니다! 💎",
+                        "설레는 마음으로 이번 주 추첨을 기다려봐요! 🎈",
+                        "이미 당신 곁에는 수많은 행운이 머물고 있습니다. 🌼",
+                        "빛나는 1등 당첨금이 당신의 통장을 기다리고 있어요! 🏦",
+                        "오늘도 행운 가득, 웃음 가득한 하루 되세요! 😄"
+                    ];
+                    const randomIdx = Math.floor(Math.random() * luckyMessages.length);
+                    lottoMsg.innerText = luckyMessages[randomIdx];
                 }
 
                 dashboardPrevValues.lotto = totalLottoGames;
