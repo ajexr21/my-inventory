@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>우리집 복권방</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-top">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="../index.html" class="back-btn" title="홈으로 이동"><i class="fas fa-arrow-left-long"></i></a>
+                <h1 class="premium-title">우리집 복권방</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- 탭 1: 내 로또 목록 (기본 화면) -->
+        <section id="tab-list" class="tab-content active">
+            <!-- 최신 당첨 번호 카드 추가 -->
+            <div id="latest-result-card" class="summary-card latest-card" style="text-align: center;">
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">최근 추첨 결과</div>
+                <h2 style="font-size: 24px; color: #222; font-weight: 800; margin-bottom: 5px;">제<span id="latest-round-title"></span>회</h2>
+                <div id="latest-numbers-container" class="game-numbers latest-numbers">
+                    <!-- 당첨 번호 공들이 여기에 렌더링됨 -->
+                </div>
+                <div id="latest-date" style="font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: right;"></div>
+            </div>
+
+            <div class="summary-card">
+                <h2>나의 복권 현황</h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">등록된 게임</span>
+                        <span class="stat-value" id="total-games">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">당첨 게임</span>
+                        <span class="stat-value highlight" id="winning-games">0</span>
+                    </div>
+                </div>
+                <button id="refresh-btn" class="btn-primary"><i class="fas fa-sync-alt"></i> 최신 당첨결과 업데이트</button>
+            </div>
+
+            <!-- 젬마 추천 번호 카드 (메인 화면으로 이동) -->
+            <div class="summary-card" style="text-align: center; border: 2px solid rgba(255, 71, 87, 0.1);">
+                <h2>✨ 행운 추천 번호 ✨</h2>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">이번 주 행운의 5게임입니다!</p>
+                <div id="gemma-picks-container" style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- 추천 번호가 여기에 렌더링됨 -->
+                </div>
+                <button id="refresh-gemma-picks-btn" class="btn-secondary" style="margin-top: 20px; font-weight: bold;">
+                    <i class="fas fa-magic"></i> 번호 다시 뽑기
+                </button>
+            </div>
+            
+            <div id="lotto-list" class="lotto-list">
+                <!-- 로또 티켓들이 동적으로 추가될 영역 -->
+            </div>
+        </section>
+
+        <!-- 탭 2: QR 스캐너 -->
+        <section id="tab-scan" class="tab-content">
+            <div class="scanner-container">
+                <h2><i class="fas fa-qrcode"></i> QR 코드를 스캔하세요</h2>
+                <p>로또 용지 우측 상단의 QR 코드를 카메라에 비춰주세요.</p>
+                <div id="qr-reader" class="qr-reader"></div>
+                <button id="stop-scan-btn" class="btn-secondary hidden">스캔 중지</button>
+            </div>
+        </section>
+
+        <!-- 탭 3: 연금복권 720+ (임시 숨김)
+        <section id="tab-pension" class="tab-content">
+            <div class="summary-card" style="border: 2px solid rgba(16, 185, 129, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 0; color: var(--text-color);">
+                        <i class="fas fa-leaf" style="color: #10b981;"></i> 연금복권 720+
+                        <span id="pension-round-title" style="font-size: 16px; color: var(--text-muted); font-weight: 400; margin-left: 8px;"></span>
+                    </h2>
+                    <span id="pension-date" style="font-size: 12px; color: var(--text-muted);"></span>
+                </div>
+                
+                <div id="pension-result-container" class="pension-container">
+                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">데이터를 불러오는 중...</p>
+                </div>
+
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+                        <i class="fas fa-info-circle"></i> 연금복권은 매주 목요일 오후 7시 5분경 추첨합니다.<br>
+                        동행복권 웹사이트 데이터를 실시간으로 분석하여 가져옵니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+        -->
+    </main>
+
+    <nav class="app-nav">
+        <button class="nav-btn active" data-target="tab-list">
+            <i class="fas fa-list"></i>
+            <span>Lotto</span>
+        </button>
+        <!-- 연금복권 탭 임시 숨김
+        <button class="nav-btn" data-target="tab-pension" id="nav-pension-btn">
+            <i class="fas fa-leaf" style="font-size: 24px;"></i>
+            <span>연금복권</span>
+        </button>
+        -->
+        <button class="nav-btn" data-target="tab-scan" id="nav-scan-btn">
+            <i class="fas fa-camera"></i>
+            <span>스캔등록</span>
+        </button>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>

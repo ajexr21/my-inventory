@@ -1,0 +1,464 @@
+:root {
+    --bg-color: #fff8f8;
+    --card-bg: #ffffff;
+    --primary-color: #ff4757;
+    --primary-glow: rgba(255, 71, 87, 0.2);
+    --secondary-color: #ee5253;
+    --text-color: #2f3542;
+    --text-muted: #a4b0be;
+    --border-color: rgba(255, 71, 87, 0.1);
+    
+    /* 로또 공 색상 (사진 기반 진한 플랫 컬러) */
+    --ball-1: #e49103; /* 1~10 (주황빛 옐로우) */
+    --ball-2: #0566cc; /* 11~20 (딥 블루) */
+    --ball-3: #d9314c; /* 21~30 (딥 레드) */
+    --ball-4: #757987; /* 31~40 (슬레이트 그레이) */
+    --ball-5: #28a543; /* 41~45 (포레스트 그린) */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Pretendard', -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.app-header {
+    padding: 20px 20px 10px;
+    background: var(--bg-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-btn {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    text-decoration: none;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+}
+
+.back-btn:hover {
+    transform: translateX(-5px);
+}
+
+.premium-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+}
+
+.app-main {
+    flex: 1;
+    padding: 0 20px 100px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 요약 카드 */
+.summary-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 25px rgba(255, 71, 87, 0.1);
+}
+
+.summary-card h2 {
+    font-size: 17px;
+    margin-bottom: 16px;
+    font-weight: 800;
+    color: #333;
+    letter-spacing: -0.5px;
+}
+
+.summary-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.summary-card.latest-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fff0f0 100%);
+    border: 1px solid rgba(255, 71, 87, 0.1);
+}
+
+.latest-numbers {
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.latest-numbers .number-ball {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.stat-value.highlight {
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(255, 71, 87, 0.2);
+}
+
+.btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: #fff;
+    border: 1px solid var(--primary-color);
+    color: var(--secondary-color);
+    margin-top: 15px;
+}
+
+/* 로또 목록 */
+.lotto-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ticket-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: 24px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 71, 87, 0.05);
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ticket-round {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-color);
+}
+
+.ticket-status {
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #fff0f0;
+    color: var(--secondary-color);
+}
+
+.status-waiting { color: var(--text-muted); }
+.status-win { background: rgba(16, 185, 129, 0.2); color: var(--secondary-color); font-weight: bold; }
+.status-lose { color: #ef4444; }
+
+.game-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.game-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    width: 24px;
+}
+
+.game-numbers {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+}
+
+.number-ball {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 900; /* 사진처럼 아주 두꺼운 폰트 */
+    color: #111;
+    background-color: #fff;
+    box-shadow: none; /* 플랫 디자인을 위해 내부 그림자 제거 */
+}
+
+/* 당첨 번호 하이라이트 */
+.number-ball.matched {
+    box-shadow: none; /* 테두리 발광 제거 */
+    color: #ffffff;
+    text-shadow: none; /* 글씨 그림자 제거 */
+}
+
+.game-result {
+    font-size: 14px;
+    font-weight: bold;
+    width: 40px;
+    text-align: right;
+}
+
+/* 스캐너 */
+.scanner-container {
+    text-align: center;
+}
+
+.scanner-container h2 {
+    margin-bottom: 10px;
+}
+
+.scanner-container p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.qr-reader {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 10px 30px var(--primary-glow);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 하단 네비게이션 */
+.app-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 20px;
+    padding-bottom: env(safe-area-inset-bottom, 25px);
+    border-top: 1px solid rgba(255, 71, 87, 0.05);
+    z-index: 20;
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* 아이콘과 글자 사이 간격 약간 넓힘 */
+    font-size: 14px; /* 글자 크기 키움 (기존 12px) */
+    font-weight: 700; /* 글자 두껍게 */
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+.nav-btn i {
+    font-size: 26px; /* 아이콘 크기 대폭 키움 (기존 20px) */
+}
+
+.nav-btn.active {
+    color: var(--primary-color);
+}
+.nav-btn.active i {
+    transform: translateY(-2px);
+    text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+}
+.delete-btn:hover {
+    color: #ef4444;
+}
+
+/* Pension Lottery Styles */
+.pension-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.pension-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.02);
+    padding: 18px;
+    border-radius: 15px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.pension-label {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pension-balls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pension-group {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--primary-color);
+    padding: 6px 12px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid var(--primary-color);
+    margin-right: 5px;
+}
+
+.pension-ball {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+    color: white;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+/* Pension Ball Colors (Standard Pension 720+ Palette) */
+.ball-p-0 { background-color: #555; }
+.ball-p-1 { background-color: #e74c3c; } /* Red */
+.ball-p-2 { background-color: #e67e22; } /* Orange */
+.ball-p-3 { background-color: #f1c40f; } /* Yellow */
+.ball-p-4 { background-color: #3498db; } /* Blue */
+.ball-p-5 { background-color: #9b59b6; } /* Purple */
+.ball-p-6 { background-color: #7f8c8d; } /* Gray */
+.ball-p-7 { background-color: #2c3e50; } /* Navy */
+.ball-p-8 { background-color: #10b981; } /* Green */
+.ball-p-9 { background-color: #333; }
+
+.pension-bonus-label {
+    color: #f39c12;
+    font-size: 13px;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+@media (max-width: 360px) {
+    .pension-ball {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+    }
+    .pension-group {
+        font-size: 16px;
+        padding: 4px 8px;
+    }
+}
+
+#latest-round-title {
+    font-weight: 800;
+    color: #222;
+}
+
+
+
