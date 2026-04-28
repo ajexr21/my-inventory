@@ -309,21 +309,24 @@ body {
 
 .game-numbers {
     display: flex;
-    gap: 6px;
+    gap: 12px;
     flex: 1;
+    flex-wrap: wrap;
+    margin: 4px 0;
 }
 
 .number-ball {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 900; /* 사진처럼 아주 두꺼운 폰트 */
     color: #111;
     background-color: #fff;
+    flex-shrink: 0;
     box-shadow: none; /* 플랫 디자인을 위해 내부 그림자 제거 */
 }
 
@@ -524,6 +527,159 @@ body {
     font-weight: 800;
     color: #222;
 }
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    display: none;
+    opacity: 0;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    width: 90%;
+    max-width: 400px;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: modalSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalSlideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 16px;
+    outline: none;
+}
+
+.selection-info {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+#selected-count {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.number-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.grid-num {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.grid-num.selected {
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border: none;
+}
+
+.grid-num.selected-1 { background: var(--ball-1); }
+.grid-num.selected-2 { background: var(--ball-2); }
+.grid-num.selected-3 { background: var(--ball-3); }
+.grid-num.selected-4 { background: var(--ball-4); }
+.grid-num.selected-5 { background: var(--ball-5); }
+
+
+.selected-balls-preview {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 10px;
+    background: rgba(255, 71, 87, 0.03);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background: #ccc !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .grid-num:not(.selected) {
+    background: #3d3d3d;
+    border-color: #4d4d4d;
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
 
 
 

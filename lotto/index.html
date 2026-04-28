@@ -108,6 +108,37 @@
         -->
     </main>
 
+    <!-- 번호 직접 입력 모달 추가 -->
+    <div id="manual-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>번호 직접 입력</h3>
+                <button id="modal-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="manual-round">회차</label>
+                    <input type="number" id="manual-round" placeholder="예: 1221">
+                </div>
+                
+                <div class="selection-info">
+                    번호 <span id="selected-count">0</span>/6개 선택됨
+                </div>
+                
+                <div id="number-grid" class="number-grid">
+                    <!-- 1~45 번호가 여기에 생성됨 -->
+                </div>
+
+                <div class="selected-balls-preview" id="selected-balls-preview">
+                    <!-- 선택된 번호 공들이 여기에 미리보기됨 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-confirm-btn" class="btn-primary" disabled>확인</button>
+            </div>
+        </div>
+    </div>
+
     <nav class="app-nav">
         <button class="nav-btn active" data-target="tab-list">
             <i class="fas fa-list"></i>
