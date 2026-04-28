@@ -510,13 +510,16 @@
                     console.error('Account data fetch error:', e);
                 }
 
-                // 3. 로또 데이터 조회
-                const lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+                // 3. 로또 데이터 조회 (Supabase 연동)
+                const { data: lottoData, error: lottoError } = await _supabase
+                    .from('lotto_tickets')
+                    .select('*');
+                
                 const winningNumbersCache = JSON.parse(localStorage.getItem('winningNumbersCache')) || {};
                 let totalLottoGames = 0;
                 let winningLottoGames = 0;
                 
-                if (Array.isArray(lottoData)) {
+                if (!lottoError && Array.isArray(lottoData)) {
                     lottoData.forEach(t => {
                         const winInfo = winningNumbersCache[t.round];
                         if (t && t.games && Array.isArray(t.games)) {
@@ -531,6 +534,10 @@
                             }
                         }
                     });
+                } else if (lottoError) {
+                    // DB 실패 시 로컬 스토리지 백업 사용
+                    const localData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+                    localData.forEach(t => { totalLottoGames += t.games.length; });
                 }
                 
                 animateCount('lotto-game-count', dashboardPrevValues.lotto, totalLottoGames);
@@ -577,6 +584,13 @@
 
         displayQuote();
         updateDashboard();
+
+        // 뒤로 가기 등으로 페이지가 다시 나타날 때 데이터 갱신
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                updateDashboard();
+            }
+        });
 
         // 서비스 워커 등록
         if ('serviceWorker' in navigator) {
