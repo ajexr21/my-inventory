@@ -24,8 +24,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let html5QrcodeScanner = null;
-    let lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+    let lottoData = []; // DB에서 가져올 예정
     let winningNumbersCache = JSON.parse(localStorage.getItem('winningNumbersCache')) || {};
+
+    // Supabase 설정
+    const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
+    let _supabase = null;
+
+    async function initLottoApp() {
+        try {
+            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            await loadLottoData();
+            
+            // 실시간 구독
+            _supabase
+                .channel('lotto-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'lotto_tickets' }, () => {
+                    loadLottoData();
+                })
+                .subscribe();
+        } catch (e) {
+            console.error("Supabase 초기화 실패, 로컬 모드로 동작합니다:", e);
+            lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+            renderLottoList();
+        }
+    }
+
+    async function loadLottoData() {
+        if (!_supabase) return;
+        const { data, error } = await _supabase
+            .from('lotto_tickets')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (!error) {
+            lottoData = data;
+            // 로컬 스토리지도 백업용으로 업데이트
+            localStorage.setItem('myLottoData', JSON.stringify(lottoData));
+            renderLottoList();
+        }
+    }
 
     // 탭 전환 로직
     navBtns.forEach(btn => {
@@ -313,13 +352,24 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: Date.now()
         };
 
-        lottoData.unshift(newTicket); // 최신 항목을 위로
+        lottoData.unshift(newTicket);
+        
+        // DB 저장 (Supabase)
+        if (_supabase) {
+            const dbData = {
+                id: newTicket.id,
+                round: newTicket.round,
+                games: newTicket.games,
+                created_at: new Date().toISOString()
+            };
+            _supabase.from('lotto_tickets').insert([dbData]).then(({error}) => {
+                if (error) console.error("DB 저장 실패:", error);
+            });
+        }
+
         saveData();
-        
-        // UI 즉시 업데이트
         renderLottoList();
-        
-        fetchWinningNumbersForRound(round); // 등록 시 당첨 결과 시도
+        fetchWinningNumbersForRound(round);
     }
 
     function saveData() {
@@ -327,9 +377,16 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('winningNumbersCache', JSON.stringify(winningNumbersCache));
     }
 
-    function deleteTicket(id) {
+    async function deleteTicket(id) {
         if(confirm("이 로또 내역을 삭제하시겠습니까?")) {
             lottoData = lottoData.filter(t => t.id !== id);
+            
+            // DB 삭제
+            if (_supabase) {
+                const { error } = await _supabase.from('lotto_tickets').delete().eq('id', id);
+                if (error) console.error("DB 삭제 실패:", error);
+            }
+
             saveData();
             renderLottoList();
         }
@@ -749,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rounds = [...new Set(lottoData.map(t => t.round))];
     rounds.forEach(r => fetchWinningNumbersForRound(r));
     updateLatestLottoResult();
-    renderLottoList();
+    initLottoApp(); // DB 초기화 및 렌더링 시작
     generateGemmaPicks(); // 초기 젬마 추천 생성
 });
 
