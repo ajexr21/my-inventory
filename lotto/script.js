@@ -315,7 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         lottoData.unshift(newTicket); // 최신 항목을 위로
         saveData();
-        alert(`${round}회차 로또가 성공적으로 등록되었습니다.`);
+        
+        // UI 즉시 업데이트
+        renderLottoList();
+        
         fetchWinningNumbersForRound(round); // 등록 시 당첨 결과 시도
     }
 
