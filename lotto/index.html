@@ -16,6 +16,9 @@
                 <a href="../index.html" class="back-btn" title="홈으로 이동"><i class="fas fa-arrow-left-long"></i></a>
                 <h1 class="premium-title">우리집 복권방</h1>
             </div>
+            <button id="theme-toggle-btn" class="theme-toggle" title="테마 변경">
+                <i class="fas fa-sun"></i>
+            </button>
         </div>
     </header>
 
@@ -70,7 +73,12 @@
                 <h2><i class="fas fa-qrcode"></i> QR 코드를 스캔하세요</h2>
                 <p>로또 용지 우측 상단의 QR 코드를 카메라에 비춰주세요.</p>
                 <div id="qr-reader" class="qr-reader"></div>
-                <button id="stop-scan-btn" class="btn-secondary hidden">스캔 중지</button>
+                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                    <button id="stop-scan-btn" class="btn-secondary hidden" style="margin-top: 0;">스캔 중지</button>
+                    <button id="manual-entry-btn" class="btn-secondary" style="margin-top: 0; background: rgba(255, 71, 87, 0.05);">
+                        <i class="fas fa-pen-to-square"></i> 번호 직접 입력하기
+                    </button>
+                </div>
             </div>
         </section>
 

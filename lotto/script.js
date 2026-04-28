@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalGamesEl = document.getElementById('total-games');
     const winningGamesEl = document.getElementById('winning-games');
     const refreshBtn = document.getElementById('refresh-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIcon = themeToggleBtn.querySelector('i');
+    const manualEntryBtn = document.getElementById('manual-entry-btn');
 
     // State
     let html5QrcodeScanner = null;
@@ -43,6 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 테마 토글 로직
+    const currentTheme = localStorage.getItem('lottoTheme') || 'light';
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('lottoTheme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('lottoTheme', 'dark');
+            }
+        });
+    }
+
+
     // 스캐너 관련 로직
     function startScanner() {
         if (!html5QrcodeScanner) {
@@ -75,19 +101,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     stopScanBtn.addEventListener('click', stopScanner);
 
+    if (manualEntryBtn) {
+        manualEntryBtn.addEventListener('click', () => {
+            const roundInput = prompt("회차를 입력하세요 (예: 1221)");
+            if (!roundInput) return;
+            
+            const round = parseInt(roundInput, 10);
+            if (isNaN(round)) {
+                alert("올바른 회차 번호를 입력해주세요.");
+                return;
+            }
+
+            const gamesInput = prompt("로또 번호를 입력하세요.\n번호는 공백이나 콤마(,)로 구분하며, 한 게임당 6개씩 입력하세요.\n(예: 7, 12, 25, 28, 35, 41)");
+            if (!gamesInput) return;
+
+            // 숫자만 추출
+            const allNums = gamesInput.split(/[\s,]+/).map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 1 && n <= 45);
+            
+            if (allNums.length < 6 || allNums.length % 6 !== 0) {
+                alert("번호가 부족하거나 형식이 맞지 않습니다. 6개씩 입력해주세요.");
+                return;
+            }
+
+            const games = [];
+            for (let i = 0; i < allNums.length; i += 6) {
+                games.push(allNums.slice(i, i + 6).sort((a, b) => a - b));
+            }
+
+            addLottoTicket(round, games);
+            document.querySelector('[data-target="tab-list"]').click();
+        });
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
-        // 동행복권 QR URL 파싱 로직
-        // 형태: http://m.dhlottery.co.kr/?v=0861m041120213645m011621223439m...
-        if (decodedText.includes('dhlottery.co.kr/?v=') || decodedText.includes('?v=')) {
-            stopScanner(); // 스캔 성공 시 카메라 중지
+        console.log("Scanned QR:", decodedText);
+        // 동행복권 QR URL 파싱 로직 (더 유연하게)
+        if (decodedText.includes('?v=') || decodedText.includes('v=')) {
+            stopScanner(); 
             
             let vData = '';
-            try {
-                const url = new URL(decodedText);
-                vData = url.searchParams.get('v');
-            } catch(e) {
-                // URL 파싱 실패시 수동 추출
-                vData = decodedText.split('?v=')[1];
+            if (decodedText.includes('v=')) {
+                vData = decodedText.split('v=')[1].split('&')[0];
             }
 
             if (vData) {
@@ -96,13 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const games = [];
                 for (let i = 1; i < parts.length; i++) {
-                    const gameStr = parts[i];
-                    if (gameStr.length === 12) {
+                    let gameStr = parts[i];
+                    // 게임 데이터는 최소 12자리(번호 6개)여야 함
+                    // 끝에 일련번호가 붙어 있을 수 있으므로 앞의 12자리만 사용
+                    if (gameStr.length >= 12) {
                         const nums = [];
                         for (let j = 0; j < 12; j += 2) {
-                            nums.push(parseInt(gameStr.substring(j, j + 2), 10));
+                            const num = parseInt(gameStr.substring(j, j + 2), 10);
+                            if (!isNaN(num)) nums.push(num);
                         }
-                        games.push(nums);
+                        if (nums.length === 6) {
+                            games.push(nums);
+                        }
                     }
                 }
 

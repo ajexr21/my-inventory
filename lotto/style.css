@@ -7,6 +7,7 @@
     --text-color: #2f3542;
     --text-muted: #a4b0be;
     --border-color: rgba(255, 71, 87, 0.1);
+    --nav-bg: rgba(255, 255, 255, 0.95);
     
     /* 로또 공 색상 (사진 기반 진한 플랫 컬러) */
     --ball-1: #e49103; /* 1~10 (주황빛 옐로우) */
@@ -14,6 +15,18 @@
     --ball-3: #d9314c; /* 21~30 (딥 레드) */
     --ball-4: #757987; /* 31~40 (슬레이트 그레이) */
     --ball-5: #28a543; /* 41~45 (포레스트 그린) */
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --primary-color: #ff6b81;
+    --primary-glow: rgba(255, 107, 129, 0.3);
+    --secondary-color: #ff4757;
+    --text-color: #f1f2f6;
+    --text-muted: #747d8c;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --nav-bg: rgba(45, 45, 45, 0.95);
 }
 
 * {
@@ -60,6 +73,58 @@ body {
 
 .back-btn:hover {
     transform: translateX(-5px);
+}
+
+.theme-toggle {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+[data-theme="dark"] .premium-title {
+    color: #f1f2f6 !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+[data-theme="dark"] #latest-round-title,
+[data-theme="dark"] .summary-card h2 {
+    color: #f1f2f6 !important;
+}
+
+[data-theme="dark"] .summary-card.latest-card {
+    background: linear-gradient(135deg, #2d2d2d 0%, #3d2d2d 100%);
+    border-color: rgba(255, 107, 129, 0.2);
+}
+
+[data-theme="dark"] .game-row {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .pension-row {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: var(--card-bg);
+    color: var(--primary-color);
+    border-color: rgba(255, 107, 129, 0.3);
 }
 
 .premium-title {
@@ -313,16 +378,16 @@ body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 500px;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--nav-bg);
     backdrop-filter: blur(15px);
     display: flex;
     justify-content: space-around;
     padding: 15px 20px;
     padding-bottom: env(safe-area-inset-bottom, 25px);
-    border-top: 1px solid rgba(255, 71, 87, 0.05);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
     z-index: 20;
     border-radius: 30px 30px 0 0;
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
 }
 
 .nav-btn {
