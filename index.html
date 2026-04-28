@@ -273,9 +273,13 @@
                     <h2>우리집 복권방</h2>
                 </div>
                 <div class="summary-box">
-                    <div class="summary-item" style="grid-column: span 2;">
+                    <div class="summary-item">
                         <span class="label">등록된 게임</span>
-                        <span id="lotto-game-count" class="value">---</span>
+                        <span id="lotto-game-count" class="value">0개</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">당첨된 게임</span>
+                        <span id="lotto-win-count" class="value highlight">0개</span>
                     </div>
                 </div>
                 <div id="lotto-preview-message"
@@ -381,7 +385,7 @@
         };
         initTheme();
 
-        let dashboardPrevValues = { income: 0, expense: 0, stock: 0, savings: 0, lotto: 0 };
+        let dashboardPrevValues = { income: 0, expense: 0, stock: 0, savings: 0, lotto: 0, lottoWin: 0 };
 
         function animateCount(elementId, start, end) {
             const obj = document.getElementById(elementId);
@@ -396,7 +400,7 @@
 
                 if (elementId === 'low-stock-count') {
                     obj.innerText = `${current}건`;
-                } else if (elementId === 'lotto-game-count') {
+                } else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') {
                     obj.innerText = `${current}개`;
                 } else {
                     obj.innerText = `${current.toLocaleString()}원`;
@@ -405,7 +409,7 @@
                 if (progress < 1) requestAnimationFrame(update);
                 else {
                     if (elementId === 'low-stock-count') obj.innerText = `${end}건`;
-                    else if (elementId === 'lotto-game-count') obj.innerText = `${end}개`;
+                    else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') obj.innerText = `${end}개`;
                     else obj.innerText = `${end.toLocaleString()}원`;
                 }
             }
@@ -498,27 +502,41 @@
 
                 // 3. 로또 데이터 조회
                 const lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+                const winningNumbersCache = JSON.parse(localStorage.getItem('winningNumbersCache')) || {};
                 let totalLottoGames = 0;
+                let winningLottoGames = 0;
                 
                 if (Array.isArray(lottoData)) {
                     lottoData.forEach(t => {
-                        // 과거 테스트 데이터나 형식이 잘못된 데이터로 인한 NaN 발생 방지
+                        const winInfo = winningNumbersCache[t.round];
                         if (t && t.games && Array.isArray(t.games)) {
                             totalLottoGames += t.games.length;
+                            
+                            // 당첨 여부 확인
+                            if (winInfo) {
+                                t.games.forEach(game => {
+                                    const matchCount = game.filter(n => winInfo.numbers.includes(n)).length;
+                                    if (matchCount >= 3) winningLottoGames++;
+                                });
+                            }
                         }
                     });
                 }
                 
                 animateCount('lotto-game-count', dashboardPrevValues.lotto, totalLottoGames);
+                animateCount('lotto-win-count', dashboardPrevValues.lottoWin, winningLottoGames);
                 
                 const lottoMsg = document.getElementById('lotto-preview-message');
-                if (totalLottoGames > 0) {
+                if (winningLottoGames > 0) {
+                    lottoMsg.innerHTML = `<span style="color:var(--accent-green); font-weight:bold;">축하합니다! ${winningLottoGames}개의 게임이 당첨되었어요! 🎊</span>`;
+                } else if (totalLottoGames > 0) {
                     lottoMsg.innerText = `현재 ${totalLottoGames}개의 게임이 행운을 기다리고 있어요! 🍀`;
                 } else {
                     lottoMsg.innerText = '아직 등록된 로또가 없어요. QR코드를 스캔해보세요! ✨';
                 }
 
                 dashboardPrevValues.lotto = totalLottoGames;
+                dashboardPrevValues.lottoWin = winningLottoGames;
 
             } catch (e) {
                 console.error('Dashboard load failed:', e);
