@@ -165,6 +165,11 @@
             color: #1abc9c;
         }
 
+        .value.highlight {
+            color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+        }
+
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -257,7 +262,7 @@
                 <div class="summary-box">
                     <div class="summary-item" style="grid-column: span 2;">
                         <span class="label">부족한 물품</span>
-                        <span id="low-stock-count" class="value minus">---</span>
+                        <span id="low-stock-count" class="value minus">0건</span>
                     </div>
                 </div>
                 <div id="stock-list-preview"
@@ -390,13 +395,18 @@
         function animateCount(elementId, start, end) {
             const obj = document.getElementById(elementId);
             if (!obj) return;
+            
+            // NaN 방지: 숫자가 아닐 경우 0으로 취급
+            const startVal = isNaN(start) ? 0 : Number(start);
+            const endVal = isNaN(end) ? 0 : Number(end);
+            
             const duration = 800;
             const startTime = performance.now();
             function update(currentTime) {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 const easeProgress = 1 - Math.pow(2, -10 * progress);
-                const current = Math.floor(start + (end - start) * easeProgress);
+                const current = Math.floor(startVal + (endVal - startVal) * easeProgress);
 
                 if (elementId === 'low-stock-count') {
                     obj.innerText = `${current}건`;
@@ -408,9 +418,9 @@
 
                 if (progress < 1) requestAnimationFrame(update);
                 else {
-                    if (elementId === 'low-stock-count') obj.innerText = `${end}건`;
-                    else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') obj.innerText = `${end}개`;
-                    else obj.innerText = `${end.toLocaleString()}원`;
+                    if (elementId === 'low-stock-count') obj.innerText = `${endVal}건`;
+                    else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') obj.innerText = `${endVal}개`;
+                    else obj.innerText = `${endVal.toLocaleString()}원`;
                 }
             }
             requestAnimationFrame(update);

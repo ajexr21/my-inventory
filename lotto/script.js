@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (games.length > 0) {
-                    addLottoTicket(round, games);
+                    addLottoTicket(round, games.slice(0, 5)); // 한 장당 최대 5게임까지만 등록
                     document.querySelector('[data-target="tab-list"]').click();
                 } else {
                     console.error("Number extraction failed for data:", vData);
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
             `;
 
-            ticket.games.forEach((game, index) => {
+            ticket.games.slice(0, 5).forEach((game, index) => {
                 totalGamesCount++;
                 const labels = ['A', 'B', 'C', 'D', 'E'];
                 
