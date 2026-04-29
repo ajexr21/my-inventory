@@ -293,6 +293,28 @@
                     이번 주 주인공은 나야 나! 🍀
                 </div>
             </a>
+
+            <!-- 교은이의 도서관 카드 -->
+            <a href="library/index.html" class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(255, 133, 162, 0.15); color: #FF85A2;">📚</div>
+                    <h2>교은이의 도서관</h2>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-item">
+                        <span class="label">읽은 책</span>
+                        <span id="lib-finished-count" class="value highlight">0권</span>
+                    </div>
+                    <div class="summary-item" style="grid-column: span 2;">
+                        <span class="label">최근 읽는 중</span>
+                        <span id="lib-reading-count" class="value">0권</span>
+                    </div>
+                </div>
+                <div id="library-message"
+                    style="margin-top: 15px; font-size: 14px; color: var(--text-sub); line-height: 1.6;">
+                    교은이의 지혜가 무럭무럭 자라나요! 🌱
+                </div>
+            </a>
         </div>
     </div>
 
@@ -574,8 +596,25 @@
                     lottoMsg.innerText = luckyMessages[randomIdx];
                 }
 
+                // 5. 교은이의 도서관 조회
+                const { data: libData } = await _supabase.from('library_books').select('status');
+                const finishedBooks = libData?.filter(b => b.status === 'finished').length || 0;
+                const readingBooks = libData?.filter(b => b.status === 'reading').length || 0;
+
+                animateCount('lib-finished-count', dashboardPrevValues.libFinished || 0, finishedBooks);
+                animateCount('lib-reading-count', dashboardPrevValues.libReading || 0, readingBooks);
+
+                const libMessage = document.getElementById('library-message');
+                if (finishedBooks >= 10) {
+                    libMessage.innerText = '와! 벌써 10권이나 읽었네요! 교은이는 독서왕 👑✨';
+                } else if (readingBooks > 0) {
+                    libMessage.innerText = '지금 읽고 있는 책도 너무 재미있을 것 같아요! 📖💖';
+                }
+
                 dashboardPrevValues.lotto = totalLottoGames;
                 dashboardPrevValues.lottoWin = winningLottoGames;
+                dashboardPrevValues.libFinished = finishedBooks;
+                dashboardPrevValues.libReading = readingBooks;
 
             } catch (e) {
                 console.error('Dashboard load failed:', e);

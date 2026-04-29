@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>교은이의 우리집 도서관</title>
+    <!-- Google Fonts: 귀여운 느낌의 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- HTML5-QRCode -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="style.css?v=1.0.0">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 상단 헤더: 교은이 환영 인사 -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="user-profile">
+                    <div class="avatar">교은</div>
+                    <div class="welcome-text">
+                        <span class="greeting">안녕, 교은아! 👋</span>
+                        <h1 class="title">교은이의 도서관</h1>
+                    </div>
+                </div>
+                <button id="theme-toggle" class="icon-btn"><i class="fas fa-magic"></i></button>
+            </div>
+            
+            <!-- 성장 요약 카드 -->
+            <div class="growth-card">
+                <div class="growth-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-books">0</span>
+                        <span class="stat-label">읽은 책</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="current-goal">10</span>
+                        <span class="stat-label">목표</span>
+                    </div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="goal-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text">목표까지 <span id="remaining-books">10</span>권 남았어요!</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 탭 메뉴 -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-target="tab-library">
+                <i class="fas fa-book-open"></i>
+                <span>내 서재</span>
+            </button>
+            <button class="tab-btn" data-target="tab-scan" id="nav-scan-btn">
+                <div class="scan-circle">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <span>책 등록</span>
+            </button>
+            <button class="tab-btn" data-target="tab-stamps">
+                <i class="fas fa-award"></i>
+                <span>칭찬 도장</span>
+            </button>
+        </nav>
+
+        <!-- 탭 콘텐츠 영역 -->
+        <main class="content-area">
+            <!-- 1. 내 서재 탭 -->
+            <section id="tab-library" class="tab-content active">
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-status="all">전체</button>
+                    <button class="filter-btn" data-status="reading">읽고 있어요</button>
+                    <button class="filter-btn" data-status="finished">다 읽었어요</button>
+                </div>
+                
+                <div id="book-list" class="book-grid">
+                    <!-- 도서 카드가 여기에 동적으로 추가됨 -->
+                    <div class="empty-state">
+                        <i class="fas fa-book-medical"></i>
+                        <p>아직 등록된 책이 없어요.<br>바코드로 책을 등록해볼까요?</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. 스캔 탭 -->
+            <section id="tab-scan" class="tab-content">
+                <div class="scan-container">
+                    <div class="scan-header">
+                        <h2>책 뒷면의 바코드를 보여주세요</h2>
+                        <p>마법의 돋보기가 책을 찾아줄 거예요!</p>
+                    </div>
+                    <div id="qr-reader" class="qr-scanner"></div>
+                    <div class="scan-actions">
+                        <button id="manual-input-btn" class="secondary-btn">직접 입력하기</button>
+                        <button id="stop-scan-btn" class="danger-btn hidden">중단하기</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. 칭찬 도장 탭 -->
+            <section id="tab-stamps" class="tab-content">
+                <div class="stamp-board">
+                    <div class="stamp-header">
+                        <h2>교은이의 칭찬 도장판</h2>
+                        <p>책을 다 읽을 때마다 멋진 도장이 찍혀요!</p>
+                    </div>
+                    <div class="stamp-grid" id="stamp-grid">
+                        <!-- 도장 20개 기본 그리드 -->
+                        <script>
+                            for(let i=1; i<=20; i++) {
+                                document.write(`<div class="stamp-slot" id="stamp-${i}"><div class="slot-num">${i}</div></div>`);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 책 상세 정보 / 등록 모달 -->
+        <div id="book-modal" class="modal hidden">
+            <div class="modal-content">
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+                <div id="modal-body">
+                    <!-- 책 정보가 여기에 채워짐 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 설정 파일 로드 -->
+    <script src="../config.js"></script>
+    <script src="script.js?v=1.0.0"></script>
+</body>
+</html>

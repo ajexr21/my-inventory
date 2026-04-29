@@ -1,0 +1,515 @@
+:root {
+    --primary-color: #FF85A2; /* 부드러운 핑크 */
+    --secondary-color: #7AD7F0; /* 맑은 하늘색 */
+    --accent-color: #FFD93D; /* 밝은 노랑 */
+    --success-color: #6BCB77; /* 산뜻한 연두 */
+    --bg-color: #FFF9FA; /* 아주 연한 핑크 배경 */
+    --card-bg: #FFFFFF;
+    --text-main: #4D4D4D;
+    --text-muted: #8E8E8E;
+    --shadow: 0 10px 25px rgba(255, 133, 162, 0.15);
+    --radius-lg: 30px;
+    --radius-md: 20px;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1A1A1A;
+    --card-bg: #2D2D2D;
+    --text-main: #F5F5F5;
+    --text-muted: #AAAAAA;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Outfit', 'Gaegu', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+    user-select: none;
+}
+
+.app-container {
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 90px; /* 탭바 높이만큼 여백 */
+}
+
+/* --- Header --- */
+.main-header {
+    padding: 30px 20px;
+    background: linear-gradient(135deg, var(--primary-color), #FFB1C1);
+    color: white;
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+    box-shadow: var(--shadow);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 55px;
+    height: 55px;
+    background-color: white;
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Gaegu', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.welcome-text .greeting {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.welcome-text .title {
+    font-family: 'Gaegu', cursive;
+    font-size: 28px;
+    margin-top: -5px;
+}
+
+.icon-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 15px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
+/* --- Growth Card --- */
+.growth-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.growth-stats {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.progress-container {
+    position: relative;
+}
+
+.progress-bar {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-color);
+    transition: width 0.5s ease-out;
+}
+
+.progress-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* --- Tab Navigation --- */
+.tab-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    height: 75px;
+    border-radius: 25px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tab-btn i {
+    font-size: 20px;
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+}
+
+.scan-circle {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -45px;
+    border: 5px solid var(--bg-color);
+    box-shadow: 0 5px 15px rgba(255, 133, 162, 0.4);
+    font-size: 24px;
+}
+
+/* --- Content Area --- */
+.content-area {
+    padding: 25px 20px;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Library Tab --- */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.filter-btn {
+    padding: 8px 18px;
+    border-radius: 15px;
+    border: none;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    cursor: pointer;
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.book-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s;
+    position: relative;
+}
+
+.book-card:active {
+    transform: scale(0.95);
+}
+
+.book-cover {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    background-color: #F0F0F0;
+}
+
+.book-info {
+    padding: 12px;
+}
+
+.book-title {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.book-author {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* --- Scan Tab --- */
+.scan-container {
+    text-align: center;
+}
+
+.qr-scanner {
+    width: 100%;
+    max-width: 300px;
+    margin: 30px auto;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 4px solid var(--primary-color);
+}
+
+/* --- Stamp Tab --- */
+.stamp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.stamp-slot {
+    aspect-ratio: 1;
+    background: var(--card-bg);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 2px dashed #E0E0E0;
+}
+
+.slot-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #E0E0E0;
+}
+
+.stamp-active {
+    background: var(--accent-color);
+    border: none;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* --- UI Elements --- */
+.empty-state {
+    grid-column: span 2;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 60px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.secondary-btn {
+    padding: 12px 25px;
+    border-radius: 20px;
+    border: 2px solid var(--primary-color);
+    background: none;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-top: 20px;
+}
+
+/* --- Modal --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    padding: 40px 30px;
+    position: relative;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    border: none;
+    background: #F0F0F0;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* --- Book Detail --- */
+.book-detail {
+    text-align: center;
+}
+
+.detail-cover {
+    width: 150px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.detail-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.detail-author {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+.status-selector {
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 30px;
+}
+
+.selector-label {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.status-options {
+    display: flex;
+    gap: 10px;
+}
+
+.opt-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 15px;
+    border: 2px solid #E0E0E0;
+    background: white;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.opt-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: #FF4757;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.hidden { display: none !important; }
