@@ -83,7 +83,6 @@ async function initApp() {
         }
         
         _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-        await applyAutoDeduct(); // 자동 차감 엔진 실행
         await loadItems();
         
         // 실시간 구독 설정
@@ -125,31 +124,6 @@ async function loadItems() {
     }
 }
 
-async function applyAutoDeduct() {
-    const { data: items, error } = await _supabase.from('inventory').select('*').gt('auto_period', 0);
-    if (error || !items) return;
-
-    const now = new Date();
-    for (const item of items) {
-        const lastCheck = new Date(item.last_check_date || item.created_at);
-        const diffDays = Math.floor((now - lastCheck) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays >= item.auto_period) {
-            const deductCount = Math.floor(diffDays / item.auto_period);
-            const newCount = Math.max(0, item.count - deductCount);
-            
-            // DB 업데이트: 수량 차감 및 마지막 체크일 갱신
-            await _supabase.from('inventory').update({ 
-                count: newCount, 
-                last_check_date: now.toISOString() 
-            }).eq('id', item.id);
-            
-            if (deductCount > 0) {
-                showNotification(`📢 편의점 매대 알림`, `[${item.name}]이 편의점 매대 회전 주기에 따라 ${deductCount}개 판매/사용되었습니다.`);
-            }
-        }
-    }
-}
 
 window.renderItems = () => {
     if (!itemList) return;
