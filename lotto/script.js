@@ -400,13 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API 통신 및 당첨 확인 로직 (Supabase 캐싱 적용)
     async function fetchWinningNumbersForRound(round) {
-        if (winningNumbersCache[round]) {
-            renderLottoList(); // 로컬 캐시가 있으면 렌더링
-            return;
-        }
-
         try {
-            // 1. Supabase DB에서 먼저 조회 (네트워크 캐싱)
+            // 1. Supabase DB에서 먼저 조회 (네트워크 캐싱 우선)
             if (_supabase) {
                 const { data: dbData, error: dbError } = await _supabase
                     .from('lotto_results')
@@ -425,6 +420,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderLottoList();
                     return;
                 }
+            }
+
+            // 2. DB에 없는데 로컬 캐시에는 있다면? (DB로 업로드 시도)
+            if (winningNumbersCache[round] && _supabase) {
+                const cache = winningNumbersCache[round];
+                await _supabase.from('lotto_results').upsert({
+                    round: round,
+                    numbers: cache.numbers,
+                    bonus: cache.bonus,
+                    draw_date: cache.date
+                });
+                console.log(`[Lotto] ${round}회차 로컬 데이터를 DB에 동기화했습니다.`);
+                renderLottoList();
+                return;
             }
 
             // 2. DB에 없으면 외부 API 호출
