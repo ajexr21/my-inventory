@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navScanBtn = document.getElementById('nav-scan-btn');
     const stopScanBtn = document.getElementById('stop-scan-btn');
     const stampGrid = document.getElementById('stamp-grid');
+    const filterBtns = document.querySelectorAll('.filter-btn');
     
     // 직접 입력 관련
     const manualInputBtn = document.getElementById('manual-input-btn');
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. 통계 업데이트
     function updateStats() {
         const finishedCount = books.filter(b => b.status === 'finished').length;
-        document.getElementById('finished-count').innerText = finishedCount;
+        totalBooksEl.innerText = finishedCount;
         
         // 10권 단위로 목표 자동 갱신 (10, 20, 30...)
         currentGoal = Math.ceil((finishedCount + 1) / 10) * 10;
@@ -116,8 +117,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('goal-progress').style.width = `${progress}%`;
         
         const remaining = currentGoal - finishedCount;
-        document.getElementById('remaining-text').innerText = 
-            remaining > 0 ? `다음 목표까지 ${remaining}권 남았어요!` : '목표 달성! 대단해요 교은아! 🎉';
+        remainingBooksEl.innerText = 
+            remaining > 0 ? `${remaining}` : '0';
+        
+        // 문구 업데이트 (필요시 추가 엘리먼트 생성 가능하지만 여기선 기존 UI 유지)
+        const goalMsgEl = document.querySelector('.goal-msg');
+        if (goalMsgEl) {
+            goalMsgEl.innerHTML = remaining > 0 
+                ? `목표까지 <span id="remaining-books">${remaining}</span>권 남았어요! <div class="mini-progress"><div id="goal-progress" class="mini-fill"></div></div>`
+                : `목표 달성! 대단해요 교은아! 🎉 <div class="mini-progress"><div id="goal-progress" class="mini-fill" style="width:100%"></div></div>`;
+            
+            // goalProgressEl이 동적으로 변경되었으므로 다시 할당하거나 직접 업데이트
+            const newFill = document.getElementById('goal-progress');
+            if (newFill) newFill.style.width = `${progress}%`;
+        }
 
         // 식물 성장 로직 (무한 성장 버전)
         updatePlantGrowth(finishedCount);
@@ -215,10 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopScanner() {
-        if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+        if (html5QrcodeScanner && html5QrcodeScanner.getState() === Html5QrcodeScannerState.SCANNING) {
             html5QrcodeScanner.stop().then(() => {
                 stopScanBtn.classList.add('hidden');
-            });
+            }).catch(err => console.error("Stop failed", err));
+        } else if (html5QrcodeScanner) {
+            // 이미 중지되었거나 다른 상태일 때도 버튼은 숨김
+            stopScanBtn.classList.add('hidden');
         }
     }
 

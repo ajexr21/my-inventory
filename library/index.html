@@ -135,19 +135,35 @@
         </div>
 
         <div id="manual-modal" class="modal hidden">
-            <div class="modal-content">
+            <div class="modal-content manual-modal-content">
+                <div class="modal-handle"></div>
                 <button class="close-manual"><i class="fas fa-times"></i></button>
+                
                 <div class="manual-form">
-                    <h2 class="form-title">교은아, 어떤 책을 읽었어?</h2>
-                    <div class="input-group">
-                        <label>책 제목</label>
-                        <input type="text" id="manual-title" placeholder="책 이름을 알려줘요">
+                    <div class="form-header">
+                        <div class="form-icon">📚</div>
+                        <h2 class="form-title">어떤 책을 읽었나요?</h2>
+                        <p class="form-subtitle">교은이의 소중한 독서 기록을 남겨보아요</p>
                     </div>
-                    <div class="input-group">
-                        <label>글쓴이</label>
-                        <input type="text" id="manual-author" placeholder="누가 쓴 책인가요?">
+
+                    <div class="input-container">
+                        <div class="input-group-premium">
+                            <label for="manual-title"><i class="fas fa-bookmark"></i> 책 제목</label>
+                            <input type="text" id="manual-title" placeholder="예: 구름빵, 달 샤베트" autocomplete="off">
+                        </div>
+                        
+                        <div class="input-group-premium">
+                            <label for="manual-author"><i class="fas fa-pen-nib"></i> 글쓴이</label>
+                            <input type="text" id="manual-author" placeholder="예: 백희나 작가님" autocomplete="off">
+                        </div>
                     </div>
-                    <button id="save-manual-btn" class="primary-btn">책장에 넣기! 📚</button>
+
+                    <div class="form-footer">
+                        <button id="save-manual-btn" class="primary-btn pulse-animation">
+                            <span>책장에 쏙 넣기!</span>
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
