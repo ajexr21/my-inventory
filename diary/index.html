@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>우리집 일기장</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css?v=1.2.2">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-top">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left-long"></i></a>
+                    <h1 class="premium-title">우리집 일기장</h1>
+                </div>
+                <button id="theme-toggle" class="theme-toggle"><i class="fas fa-sun"></i></button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <section class="summary-card">
+                <div class="intro-content">
+                    <h2>오늘 우리 가족은<br>어떤 하루였나요?</h2>
+                    <p>소중한 기억을 담아보세요.</p>
+                </div>
+                <i class="fas fa-feather-pointed intro-icon"></i>
+            </section>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" data-author="all">전체</button>
+                <button class="filter-btn" data-author="아빠">아빠</button>
+                <button class="filter-btn" data-author="엄마">엄마</button>
+                <button class="filter-btn" data-author="교현">교현</button>
+                <button class="filter-btn" data-author="교빈">교빈</button>
+                <button class="filter-btn" data-author="교은">교은</button>
+            </div>
+
+            <div id="diary-list" class="diary-list"></div>
+        </main>
+
+        <!-- 일기 쓰기 모달 -->
+        <div id="write-modal" class="modal hidden">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <button id="cancel-write-btn" class="close-modal text-btn" onclick="closeModal(document.getElementById('write-modal'))">취소</button>
+                    <span class="modal-title">일기 쓰기</span>
+                    <button id="save-diary-btn" class="save-btn">등록</button>
+                </header>
+                
+                <div class="write-form">
+                    <div class="input-group">
+                        <label>작성자</label>
+                        <div class="author-chips" id="author-select">
+                            <div class="author-chip" data-value="아빠">아빠</div>
+                            <div class="author-chip" data-value="엄마">엄마</div>
+                            <div class="author-chip" data-value="교현">교현</div>
+                            <div class="author-chip" data-value="교빈">교빈</div>
+                            <div class="author-chip" data-value="교은">교은</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="background:none; border:none; padding:0;">
+                        <textarea id="diary-content" class="content-input" placeholder="오늘의 이야기를 들려주세요..."></textarea>
+                    </div>
+
+                    <div class="settings-group">
+                        <div class="setting-item">
+                            <span>비밀 일기로 잠글까요?</span>
+                            <label class="ios-switch">
+                                <input type="checkbox" id="is-private">
+                                <span class="ios-slider"></span>
+                            </label>
+                        </div>
+                        <div id="password-area" class="password-box hidden">
+                            <i class="fas fa-key"></i>
+                            <input type="password" id="diary-password" placeholder="비밀번호">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 일기 보기 모달 -->
+        <div id="view-modal" class="modal hidden">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <button class="close-view text-btn" onclick="closeModal(document.getElementById('view-modal'))">닫기</button>
+                    <span id="view-author-badge" style="padding:4px 12px; border-radius:10px; font-size:0.85rem; font-weight:800; color:white;"></span>
+                    <button id="delete-diary-btn" style="background:none; border:none; color:#EF4444; font-size:1.1rem; padding:10px; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                <div class="write-form" style="padding-top:30px;">
+                    <div id="view-date" style="font-size:0.9rem; opacity:0.5; margin-bottom:10px;"></div>
+                    <div id="view-body" style="font-size:1.1rem; line-height:1.7; white-space:pre-wrap; opacity:0.9;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 비밀번호 확인 모달 -->
+        <div id="auth-modal" class="modal hidden">
+            <div class="auth-box">
+                <i class="fas fa-lock auth-icon"></i>
+                <p style="font-weight:700; margin-bottom:15px; color:white;">비밀 일기입니다</p>
+                <input type="password" id="auth-password" class="auth-input" placeholder="****" maxlength="20">
+                <div class="auth-btns">
+                    <button class="cancel-auth" onclick="closeModal(document.getElementById('auth-modal'))">취소</button>
+                    <button id="confirm-auth-btn" class="confirm-auth">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 커스텀 컨펌 모달 -->
+        <div id="confirm-modal" class="modal hidden">
+            <div class="auth-box" style="margin-top:200px;">
+                <i class="fas fa-question-circle auth-icon" style="color:var(--primary);"></i>
+                <p id="confirm-msg" style="font-weight:700; margin-bottom:25px; color:white; line-height:1.5;"></p>
+                <div class="auth-btns">
+                    <button id="confirm-cancel-btn" class="cancel-auth">취소</button>
+                    <button id="confirm-ok-btn" class="confirm-auth">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../config.js"></script>
+    <script src="script.js?v=1.2.2"></script>
+</body>
+</html>

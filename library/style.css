@@ -1,23 +1,23 @@
 :root {
-    --primary-color: #FF85A2; /* 부드러운 핑크 */
-    --secondary-color: #7AD7F0; /* 맑은 하늘색 */
-    --accent-color: #FFD93D; /* 밝은 노랑 */
-    --success-color: #6BCB77; /* 산뜻한 연두 */
-    --bg-color: #FFF9FA; /* 아주 연한 핑크 배경 */
-    --card-bg: #FFFFFF;
-    --text-main: #4D4D4D;
-    --text-muted: #8E8E8E;
-    --shadow: 0 10px 25px rgba(255, 133, 162, 0.15);
-    --radius-lg: 30px;
-    --radius-md: 20px;
+    --primary-color: #A78BFA; /* 부드러운 퍼플 (가계부와 통일) */
+    --secondary-color: #60A5FA; /* 맑은 블루 */
+    --accent-color: #F472B6; /* 포인트 핑크 */
+    --bg-color: #0F172A; /* 심해색 배경 */
+    --card-bg: #1E293B; /* 다크 카드 배경 */
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    --radius-lg: 24px;
+    --radius-md: 16px;
 }
 
-[data-theme="dark"] {
-    --bg-color: #1A1A1A;
-    --card-bg: #2D2D2D;
-    --text-main: #F5F5F5;
-    --text-muted: #AAAAAA;
-    --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+/* 라이트 테마 (필요시 사용) */
+[data-theme="light"] {
+    --bg-color: #F8FAFC;
+    --card-bg: #FFFFFF;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -34,263 +34,248 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     user-select: none;
+    transition: background-color 0.3s;
 }
 
 .app-container {
-    max-width: 500px;
+    max-width: 800px;
     margin: 0 auto;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    padding-bottom: 90px; /* 탭바 높이만큼 여백 */
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
-/* --- Header --- */
-.main-header {
-    padding: 30px 20px;
-    background: linear-gradient(135deg, var(--primary-color), #FFB1C1);
-    color: white;
-    border-bottom-left-radius: 40px;
-    border-bottom-right-radius: 40px;
-    box-shadow: var(--shadow);
-}
-
-.header-content {
+/* --- App Header (우리집 표준) --- */
+.app-header {
+    padding: calc(20px + env(safe-area-inset-top)) 20px 15px;
+    background: var(--bg-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    backdrop-filter: blur(10px);
 }
 
-.user-profile {
+.header-left {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-.avatar {
-    width: 55px;
-    height: 55px;
-    background-color: white;
-    color: var(--primary-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Gaegu', cursive;
-    font-size: 24px;
-    font-weight: 700;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.app-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.welcome-text .greeting {
-    font-size: 16px;
-    opacity: 0.9;
-}
-
-.welcome-text .title {
-    font-family: 'Gaegu', cursive;
-    font-size: 28px;
-    margin-top: -5px;
+.back-btn {
+    color: var(--text-main);
+    font-size: 1.2rem;
+    text-decoration: none;
 }
 
 .icon-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    width: 45px;
-    height: 45px;
-    border-radius: 15px;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-}
-
-/* --- Growth Card --- */
-.growth-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.growth-stats {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-value {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.stat-label {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-.stat-divider {
-    width: 1px;
-    height: 30px;
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.progress-container {
-    position: relative;
-}
-
-.progress-bar {
-    height: 12px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 8px;
-}
-
-.progress-fill {
-    height: 100%;
-    background: var(--accent-color);
-    box-shadow: 0 0 10px var(--accent-color);
-    transition: width 0.5s ease-out;
-}
-
-.progress-text {
-    font-size: 13px;
-    font-weight: 500;
-}
-
-/* --- Tab Navigation --- */
-.tab-nav {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
     background: var(--card-bg);
-    height: 75px;
-    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    color: var(--text-main);
     display: flex;
-    justify-content: space-around;
     align-items: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    z-index: 1000;
-}
-
-.tab-btn {
-    flex: 1;
-    border: none;
-    background: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
+    justify-content: center;
     cursor: pointer;
-    transition: all 0.3s;
 }
 
-.tab-btn i {
-    font-size: 20px;
-}
-
-.tab-btn.active {
-    color: var(--primary-color);
-}
-
-.scan-circle {
-    width: 60px;
-    height: 60px;
-    background: var(--primary-color);
+/* --- Summary Card (가계부 스타일) --- */
+.summary-card {
+    background: linear-gradient(135deg, #4C1D95 0%, #1E1B4B 100%);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin: 10px 20px 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     color: white;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    background: white;
+    color: #4C1D95;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: -45px;
-    border: 5px solid var(--bg-color);
-    box-shadow: 0 5px 15px rgba(255, 133, 162, 0.4);
-    font-size: 24px;
+    font-family: 'Gaegu', cursive;
+    font-weight: 700;
 }
 
-/* --- Content Area --- */
-.content-area {
-    padding: 25px 20px;
+.welcome-msg {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.9;
 }
 
-.tab-content {
-    display: none;
-    animation: fadeIn 0.4s ease-out;
+.plant-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
 }
 
-.tab-content.active {
+.plant-emoji {
+    font-size: 2rem;
+    animation: sway 3s ease-in-out infinite;
+}
+
+@keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+}
+
+.plant-info {
+    flex: 1;
+}
+
+#plant-level-name {
     display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 6px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.exp-bar-container {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-/* --- Library Tab --- */
+.exp-bar-fill {
+    height: 100%;
+    background: var(--primary-color);
+    width: 0%;
+    transition: width 1s ease-out;
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.goal-msg {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.mini-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.mini-fill {
+    height: 100%;
+    background: var(--accent-color);
+    width: 0%;
+    transition: width 1s ease-out;
+}
+
+/* --- Filter Bar --- */
 .filter-bar {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    padding: 0 20px;
     margin-bottom: 20px;
     overflow-x: auto;
-    padding-bottom: 5px;
 }
 
 .filter-btn {
-    padding: 8px 18px;
-    border-radius: 15px;
-    border: none;
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: var(--card-bg);
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 0.85rem;
     font-weight: 600;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     cursor: pointer;
 }
 
 .filter-btn.active {
     background: var(--primary-color);
     color: white;
+    border-color: var(--primary-color);
 }
 
+/* --- Book Grid --- */
 .book-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
+    padding: 0 20px;
 }
 
 .book-card {
     background: var(--card-bg);
     border-radius: var(--radius-md);
     overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: transform 0.3s;
-    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s;
 }
 
 .book-card:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 
 .book-cover {
     width: 100%;
     aspect-ratio: 3/4;
     object-fit: cover;
-    background-color: #F0F0F0;
+    background: #2D3748;
 }
 
 .book-info {
@@ -298,7 +283,7 @@ body {
 }
 
 .book-title {
-    font-size: 15px;
+    font-size: 0.9rem;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
@@ -307,95 +292,77 @@ body {
 }
 
 .book-author {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 
 .status-badge {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 10px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* --- Tab Nav (우리집 표준) --- */
+.tab-nav {
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 20px;
+    right: 20px;
+    max-width: 760px;
+    margin: 0 auto;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(15px);
+    height: 70px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    z-index: 1000;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    outline: none;
 }
 
-/* --- Scan Tab --- */
-.scan-container {
-    text-align: center;
+.tab-btn i {
+    font-size: 1.3rem;
 }
 
-.qr-scanner {
-    width: 100%;
-    max-width: 300px;
-    margin: 30px auto;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 4px solid var(--primary-color);
+.tab-btn.active {
+    color: var(--primary-color);
 }
 
-/* --- Stamp Tab --- */
-.stamp-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-top: 25px;
-}
-
-.stamp-slot {
-    aspect-ratio: 1;
-    background: var(--card-bg);
-    border-radius: 15px;
+.scan-circle {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    border: 2px dashed #E0E0E0;
-}
-
-.slot-num {
-    font-size: 18px;
-    font-weight: 700;
-    color: #E0E0E0;
-}
-
-.stamp-active {
-    background: var(--accent-color);
-    border: none;
-    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes popIn {
-    0% { transform: scale(0); }
-    80% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-/* --- UI Elements --- */
-.empty-state {
-    grid-column: span 2;
-    padding: 60px 20px;
-    text-align: center;
-    color: var(--text-muted);
-}
-
-.empty-state i {
-    font-size: 60px;
-    margin-bottom: 20px;
-    opacity: 0.3;
-}
-
-.secondary-btn {
-    padding: 12px 25px;
-    border-radius: 20px;
-    border: 2px solid var(--primary-color);
-    background: none;
-    color: var(--primary-color);
-    font-weight: 700;
-    margin-top: 20px;
+    margin-top: -40px;
+    border: 4px solid var(--bg-color);
+    box-shadow: 0 8px 16px rgba(167, 139, 250, 0.3);
 }
 
 /* --- Modal --- */
@@ -405,11 +372,11 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
     z-index: 2000;
     display: flex;
     align-items: flex-end;
-    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
@@ -417,12 +384,11 @@ body {
     width: 100%;
     max-width: 500px;
     margin: 0 auto;
-    border-top-left-radius: 40px;
-    border-top-right-radius: 40px;
-    padding: 40px 30px;
+    border-top-left-radius: 32px;
+    border-top-right-radius: 32px;
+    padding: 30px 24px calc(30px + env(safe-area-inset-bottom));
     position: relative;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-    animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: slideUp 0.3s ease-out;
 }
 
 @keyframes slideUp {
@@ -430,86 +396,147 @@ body {
     to { transform: translateY(0); }
 }
 
-.close-modal {
+.close-modal, .close-manual {
     position: absolute;
     top: 20px;
-    right: 25px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    background: #F0F0F0;
-    width: 35px;
-    height: 35px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    color: var(--text-muted);
+    color: white;
     cursor: pointer;
 }
 
-/* --- Book Detail --- */
-.book-detail {
+/* --- Forms & Details --- */
+.form-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 25px;
     text-align: center;
 }
 
-.detail-cover {
-    width: 150px;
-    border-radius: 15px;
-    box-shadow: var(--shadow);
+.input-group {
     margin-bottom: 20px;
 }
 
-.detail-title {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.detail-author {
+.input-group label {
+    display: block;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    margin-bottom: 30px;
+    margin-bottom: 8px;
+    padding-left: 4px;
 }
 
-.status-selector {
-    background: var(--bg-color);
-    padding: 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 30px;
+.input-group input {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
 }
 
-.selector-label {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 15px;
-}
-
-.status-options {
-    display: flex;
-    gap: 10px;
-}
-
-.opt-btn {
-    flex: 1;
-    padding: 12px;
-    border-radius: 15px;
-    border: 2px solid #E0E0E0;
-    background: white;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.opt-btn.active {
-    border-color: var(--primary-color);
+.primary-btn {
+    width: 100%;
+    padding: 16px;
     background: var(--primary-color);
     color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-top: 10px;
+    box-shadow: 0 10px 20px rgba(167, 139, 250, 0.2);
 }
 
-.delete-btn {
-    background: none;
+.secondary-btn, .stop-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
     border: none;
-    color: #FF4757;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: underline;
+    font-weight: 700;
+    margin-top: 15px;
     cursor: pointer;
+}
+
+.secondary-btn { background: var(--secondary-color); color: white; }
+.stop-btn { background: #EF4444; color: white; }
+
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.2;
 }
 
 .hidden { display: none !important; }
+
+/* --- Tab Content Control (핵심 수정) --- */
+.tab-content {
+    display: none; /* 기본적으로 모든 탭 숨김 */
+}
+
+.tab-content.active {
+    display: block !important; /* 선택된 탭만 표시 */
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Stamp Tab Layout --- */
+.stamp-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5열 그리드 */
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.stamp-slot {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.slot-num {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.stamp-active {
+    background: var(--accent-color);
+    border: none;
+    box-shadow: 0 5px 15px rgba(244, 114, 182, 0.4);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/* QR Scanner */
+.qr-scanner {
+    width: 100%;
+    max-width: 320px;
+    margin: 20px auto;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 3px solid var(--primary-color);
+}

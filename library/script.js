@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopScanBtn = document.getElementById('stop-scan-btn');
     const stampGrid = document.getElementById('stamp-grid');
     
+    // 직접 입력 관련
+    const manualInputBtn = document.getElementById('manual-input-btn');
+    const manualModal = document.getElementById('manual-modal');
+    const closeManualBtn = document.querySelector('.close-manual');
+    const saveManualBtn = document.getElementById('save-manual-btn');
+    
     // 2. State
     let _supabase = null;
     let books = [];
@@ -54,20 +60,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. 독서 목록 렌더링
-    function renderBooks() {
-        if (books.length === 0) {
+    function renderBooks(filterStatus = 'all') {
+        let filteredBooks = books;
+        if (filterStatus !== 'all') {
+            filteredBooks = books.filter(b => b.status === filterStatus);
+        }
+
+        if (filteredBooks.length === 0) {
+            const emptyMsg = filterStatus === 'all' 
+                ? "아직 등록된 책이 없어요.<br>바코드로 책을 등록해볼까요?" 
+                : (filterStatus === 'reading' ? "지금 읽고 있는 책이 없어요." : "다 읽은 책이 아직 없어요.");
+                
             bookListContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-book-medical"></i>
-                    <p>아직 등록된 책이 없어요.<br>바코드로 책을 등록해볼까요?</p>
+                    <p>${emptyMsg}</p>
                 </div>`;
             return;
         }
 
-        bookListContainer.innerHTML = books.map(book => `
+        bookListContainer.innerHTML = filteredBooks.map(book => `
             <div class="book-card" onclick="openBookDetail('${book.id}')">
                 <img src="${book.cover_url || 'https://via.placeholder.com/150x200?text=No+Cover'}" class="book-cover" alt="${book.title}">
-                <div class="status-badge" style="color: ${getStatusColor(book.status)}">
+                <div class="status-badge">
                     ${getStatusText(book.status)}
                 </div>
                 <div class="book-info">
@@ -91,16 +106,77 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. 통계 업데이트
     function updateStats() {
         const finishedCount = books.filter(b => b.status === 'finished').length;
-        totalBooksEl.textContent = finishedCount;
+        document.getElementById('finished-count').innerText = finishedCount;
+        
+        // 10권 단위로 목표 자동 갱신 (10, 20, 30...)
+        currentGoal = Math.ceil((finishedCount + 1) / 10) * 10;
+        document.getElementById('current-goal').innerText = currentGoal;
         
         const progress = Math.min((finishedCount / currentGoal) * 100, 100);
-        goalProgressEl.style.width = `${progress}%`;
-        remainingBooksEl.textContent = Math.max(currentGoal - finishedCount, 0);
+        document.getElementById('goal-progress').style.width = `${progress}%`;
+        
+        const remaining = currentGoal - finishedCount;
+        document.getElementById('remaining-text').innerText = 
+            remaining > 0 ? `다음 목표까지 ${remaining}권 남았어요!` : '목표 달성! 대단해요 교은아! 🎉';
+
+        // 식물 성장 로직 (무한 성장 버전)
+        updatePlantGrowth(finishedCount);
+    }
+
+    function updatePlantGrowth(count) {
+        const plantIcon = document.getElementById('magic-plant');
+        const levelName = document.getElementById('plant-level-name');
+        const expFill = document.getElementById('plant-exp');
+        
+        // 현재 사이클 (0~9권: 레벨 1, 10~19권: 레벨 2...)
+        const forestLevel = Math.floor(count / 10) + 1;
+        const cycleCount = count % 10;
+        
+        let icon = '🌱';
+        let name = `레벨 ${forestLevel} 정원사 교은이`;
+        let progress = (cycleCount / 10) * 100;
+
+        if (count === 0) {
+            icon = '🌱'; name = '초보 정원사 교은이';
+        } else if (cycleCount === 0 && count > 0) {
+            // 딱 10, 20, 30권을 채웠을 때 (완성된 나무)
+            const trees = ['🌳', '🍎🌳', '🍊🌳', '🍇🌳', '💎🌳', '🌟🌳', '🌈🌳', '🏰'];
+            icon = trees[Math.min(forestLevel - 2, trees.length - 1)] + '✨';
+            name = `전설의 나무를 완성했어요! (총 ${count}권)`;
+            progress = 100;
+        } else {
+            // 성장 중인 상태
+            if (cycleCount >= 7) icon = '🌸';
+            else if (cycleCount >= 4) icon = '🪴';
+            else icon = '🌿';
+            
+            const titles = ['', '꿈나무', '우등', '숲의 관리자', '요정의 친구', '마법사', '전설의 왕'];
+            const title = titles[Math.min(forestLevel, titles.length - 1)];
+            name = `${title} 정원사 교은이 (${count}권)`;
+        }
+
+        plantIcon.innerText = icon;
+        levelName.innerText = name;
+        expFill.style.width = `${Math.min(progress, 100)}%`;
     }
 
     // 7. 칭찬 도장 렌더링
     function renderStamps() {
         const finishedCount = books.filter(b => b.status === 'finished').length;
+        
+        // 도장 슬롯이 없으면 생성
+        if (stampGrid.children.length === 0) {
+            stampGrid.innerHTML = '';
+            for (let i = 1; i <= 20; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'stamp-slot';
+                slot.id = `stamp-${i}`;
+                slot.innerHTML = `<div class="slot-num">${i}</div>`;
+                stampGrid.appendChild(slot);
+            }
+        }
+
+        // 도장 찍기
         for (let i = 1; i <= 20; i++) {
             const slot = document.getElementById(`stamp-${i}`);
             if (i <= finishedCount) {
@@ -281,6 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             tabContents.forEach(c => c.classList.remove('active'));
             document.getElementById(target).classList.add('active');
+
+            // 페이지 상단으로 스크롤
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             if (target === 'tab-scan') {
                 startScanner();
@@ -290,16 +369,77 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 13. 필터 버튼 이벤트
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const status = btn.getAttribute('data-status');
+            
+            // 버튼 활성화 처리
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 목록 필터링 렌더링
+            renderBooks(status);
+        });
+    });
+
     stopScanBtn.addEventListener('click', stopScanner);
 
     // 테마 토글
     themeToggleBtn.addEventListener('click', () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        if (isDark) {
-            document.documentElement.removeAttribute('data-theme');
-        } else {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        if (newTheme === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         }
+        localStorage.setItem('library-theme', newTheme);
+    });
+
+    // 초기 테마 설정
+    const savedTheme = localStorage.getItem('library-theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+    } else {
+        themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    // 12. 직접 입력 로직
+    manualInputBtn.addEventListener('click', () => {
+        manualModal.classList.remove('hidden');
+    });
+
+    closeManualBtn.addEventListener('click', () => {
+        manualModal.classList.add('hidden');
+    });
+
+    saveManualBtn.addEventListener('click', async () => {
+        const title = document.getElementById('manual-title').value.trim();
+        const author = document.getElementById('manual-author').value.trim();
+        
+        if (!title) {
+            alert("책 이름을 알려주세요!");
+            return;
+        }
+        
+        const bookData = {
+            title: title,
+            author: author || '작가 미상',
+            status: 'reading', // 직접 입력 시 기본값은 '읽는 중'
+            cover_url: '' // 커버는 직접 입력 시 비워둠 (향후 기본 이미지 처리)
+        };
+        
+        await addNewBook(bookData);
+        
+        // 입력 필드 초기화 및 모달 닫기
+        document.getElementById('manual-title').value = '';
+        document.getElementById('manual-author').value = '';
+        manualModal.classList.add('hidden');
     });
 
     initApp();

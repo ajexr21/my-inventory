@@ -1,0 +1,199 @@
+:root {
+    --primary: #8B5CF6;
+    --bg: #0F172A;
+    --card: #1E293B;
+    --text: #F8FAFC;
+    --text-sub: #94A3B8;
+    --c-dad: #3B82F6; --c-mom: #F43F5E; --c-kh: #10B981; --c-kb: #F59E0B; --c-ke: #EC4899;
+}
+
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    font-family: 'Pretendard', -apple-system, sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body { 
+    background: var(--bg); 
+    color: var(--text); 
+    line-height: 1.6; 
+    min-height: 100vh;
+}
+
+/* --- App Layout (복권방 800px 표준) --- */
+.app-header {
+    padding: calc(20px + env(safe-area-inset-top)) 20px 10px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.premium-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #A78BFA, #F472B6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.back-btn { color: var(--text); font-size: 1.3rem; text-decoration: none; }
+.theme-toggle { background: var(--card); border: 1px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); }
+
+.app-main {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 20px 50px;
+}
+
+/* --- Summary Card --- */
+.summary-card {
+    background: linear-gradient(135deg, #4C1D95 0%, #1E1B4B 100%);
+    border-radius: 24px; padding: 24px; margin-bottom: 24px;
+    position: relative; overflow: hidden; display: flex; align-items: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.filter-bar { display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+.filter-btn { padding: 8px 16px; border-radius: 14px; border: none; background: var(--card); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; }
+.filter-btn.active { background: var(--primary); color: white; }
+
+.diary-list { display: flex; flex-direction: column; gap: 16px; }
+.diary-card { background: var(--card); border-radius: 24px; padding: 24px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+.diary-card.add-card { border: 2px dashed rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); display: flex; justify-content: center; padding: 30px; color: var(--primary); font-weight: 700; }
+
+/* --- Write Modal --- */
+.modal { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal-content { background: var(--bg); width: 90%; max-width: 450px; margin: auto; border-radius: 24px; padding: 24px; animation: modalSlideUp 0.3s ease; }
+
+@keyframes modalSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.modal-title { font-weight: 800; font-size: 1.2rem; }
+.save-btn { background: var(--primary); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+.text-btn { 
+    background: none; 
+    border: none; 
+    color: var(--text-sub); 
+    font-weight: 700; 
+    font-size: 1rem; 
+    cursor: pointer; 
+    padding: 15px; /* 클릭 영역 대폭 확장 */
+    margin: -10px; /* 확장된 패딩만큼 마진 상쇄 */
+    position: relative; 
+    z-index: 10; 
+    pointer-events: auto !important; 
+}
+
+/* --- 작성자 칩 균등 배분 (20%씩 꽉 차게) --- */
+.author-chips { 
+    display: flex; 
+    gap: 6px; 
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 30px; /* 내용창과의 시원한 간격 확보 */
+}
+.author-chip { 
+    flex: 1; /* 5등분 균등 배분 */
+    padding: 12px 0; 
+    text-align: center; 
+    border-radius: 12px; 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    font-weight: 700; 
+    font-size: 14px; 
+    cursor: pointer; 
+    transition: 0.2s; 
+}
+.author-chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+.input-group label { display: block; font-size: 14px; margin-bottom: 8px; color: var(--primary); font-weight: 800; letter-spacing: 0.1em; }
+
+.title-input { width: 100%; background: transparent !important; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: white !important; font-size: 1.2rem; font-weight: 700; padding: 15px 0; margin-bottom: 15px; outline: none; }
+.content-input { width: 100%; min-height: 180px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 1rem; padding: 15px; outline: none; resize: none; line-height: 1.6; }
+
+/* --- 비밀번호 폰트 통일 (Pretendard) --- */
+.password-box { margin-top: 15px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 12px; border: 1px solid var(--primary); }
+.password-box input { 
+    background: transparent !important; 
+    border: none; 
+    color: white !important; 
+    font-size: 1.1rem; 
+    letter-spacing: 2px; /* 제약 없는 입력을 위해 자간 조절 */
+    outline: none; 
+    width: 100%; 
+    font-family: 'Pretendard', sans-serif !important; 
+}
+
+.ios-switch { 
+    position: relative; 
+    display: inline-block;
+    width: 46px; /* 복권방 표준 사이즈 */
+    height: 26px; 
+    flex-shrink: 0; /* 부모 flex에 의해 찌그러짐 방지 */
+}
+.ios-switch input { opacity: 0; width: 0; height: 0; }
+.ios-slider { 
+    position: absolute; 
+    cursor: pointer; 
+    inset: 0; 
+    background-color: #334155; 
+    transition: .4s; 
+    border-radius: 34px; 
+}
+.ios-slider:before { 
+    position: absolute; 
+    content: ""; 
+    height: 20px; 
+    width: 20px; 
+    left: 3px; 
+    bottom: 3px; 
+    background-color: white; 
+    transition: .4s; 
+    border-radius: 50%; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+input:checked + .ios-slider { background-color: var(--primary); }
+input:checked + .ios-slider:before { transform: translateX(20px); }
+
+/* --- Auth & Confirm Modal --- */
+.auth-box { 
+    background: var(--card); 
+    border-radius: 28px; 
+    padding: 35px 25px; 
+    text-align: center; 
+    border: 1px solid rgba(255,255,255,0.1); 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    width: 90%; 
+    max-width: 340px; 
+    margin: auto;
+}
+.auth-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; }
+.auth-input { 
+    width: 100%; background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(255,255,255,0.1); 
+    padding: 15px; border-radius: 15px; margin-bottom: 25px; color: white !important; 
+    text-align: center; font-size: 1.5rem; letter-spacing: 8px; outline: none; font-family: 'Pretendard', sans-serif !important;
+}
+
+.auth-btns { display: flex; gap: 12px; }
+.auth-btns button { 
+    flex: 1; padding: 14px; border-radius: 16px; border: none; font-weight: 800; cursor: pointer; font-size: 1rem; transition: 0.2s; 
+}
+.confirm-auth { 
+    background: linear-gradient(135deg, var(--primary), #7C3AED); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+.confirm-auth:active { transform: scale(0.96); }
+.cancel-auth { background: #334155; color: var(--text-sub); }
+.cancel-auth:hover { background: #475569; }
+
+.hidden { display: none !important; }

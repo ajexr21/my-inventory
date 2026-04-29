@@ -3,8 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>우리집 스마트 허브</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
@@ -52,9 +54,9 @@
 
         /* 모바일 최적화 컨테이너 */
         .container {
-            max-width: 500px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 25px 20px;
+            padding: calc(25px + env(safe-area-inset-top)) 20px calc(25px + env(safe-area-inset-bottom));
         }
 
         header {
@@ -81,8 +83,8 @@
         }
 
         .dashboard-grid {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
         }
 
@@ -129,9 +131,9 @@
         }
 
         .summary-box {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid rgba(0, 0, 0, 0.05);
@@ -139,19 +141,20 @@
 
         .summary-item {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .label {
-            font-size: 11px;
+            font-size: 13px;
             color: var(--text-sub);
-            font-weight: 700;
+            font-weight: 600;
         }
 
         .value {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 800;
+            white-space: nowrap;
         }
 
         .value.plus {
@@ -305,7 +308,7 @@
                         <span class="label">읽은 책</span>
                         <span id="lib-finished-count" class="value highlight">0권</span>
                     </div>
-                    <div class="summary-item" style="grid-column: span 2;">
+                    <div class="summary-item">
                         <span class="label">최근 읽는 중</span>
                         <span id="lib-reading-count" class="value">0권</span>
                     </div>
@@ -313,6 +316,24 @@
                 <div id="library-message"
                     style="margin-top: 15px; font-size: 14px; color: var(--text-sub); line-height: 1.6;">
                     교은이의 지혜가 무럭무럭 자라나요! 🌱
+                </div>
+            </a>
+
+            <!-- 우리집 일기장 카드 -->
+            <a href="diary/index.html" class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(139, 92, 246, 0.15); color: #8B5CF6;">📝</div>
+                    <h2>우리집 일기장</h2>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-item" style="grid-column: span 2;">
+                        <span class="label">최근 기록</span>
+                        <span id="diary-preview-author" class="value">가족 일기</span>
+                    </div>
+                </div>
+                <div id="diary-message"
+                    style="margin-top: 15px; font-size: 14px; color: var(--text-sub); line-height: 1.6;">
+                    우리 가족의 소중한 추억 보관소 ✨
                 </div>
             </a>
         </div>
@@ -434,6 +455,8 @@
                     obj.innerText = `${current}건`;
                 } else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') {
                     obj.innerText = `${current}개`;
+                } else if (elementId === 'lib-finished-count' || elementId === 'lib-reading-count') {
+                    obj.innerText = `${current}권`;
                 } else {
                     obj.innerText = `${current.toLocaleString()}원`;
                 }
@@ -442,6 +465,7 @@
                 else {
                     if (elementId === 'low-stock-count') obj.innerText = `${endVal}건`;
                     else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') obj.innerText = `${endVal}개`;
+                    else if (elementId === 'lib-finished-count' || elementId === 'lib-reading-count') obj.innerText = `${endVal}권`;
                     else obj.innerText = `${endVal.toLocaleString()}원`;
                 }
             }
