@@ -18,6 +18,11 @@
     --text-main: #1E293B;
     --text-muted: #64748B;
     --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    --border-color: rgba(0, 0, 0, 0.05);
+}
+
+:root {
+    --border-color: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -102,6 +107,10 @@ body {
     margin: 10px 20px 25px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     color: white;
+}
+
+[data-theme="light"] .summary-card {
+    background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
 }
 
 .profile-header {
@@ -236,7 +245,7 @@ body {
 .filter-btn {
     padding: 8px 16px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     background: var(--card-bg);
     color: var(--text-muted);
     font-size: 0.85rem;
@@ -263,7 +272,7 @@ body {
     background: var(--card-bg);
     border-radius: var(--radius-md);
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
     transition: transform 0.2s;
 }
 

@@ -28,9 +28,10 @@ window.initTheme = function() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     const icon = document.querySelector('#theme-toggle i');
     if (savedTheme === 'light') {
-        document.body.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-theme', 'light');
         if (icon) icon.className = 'fas fa-moon';
     } else {
+        document.documentElement.removeAttribute('data-theme');
         if (icon) icon.className = 'fas fa-sun';
     }
 };
@@ -217,14 +218,14 @@ window.initEventListeners = function() {
         });
     });
     document.getElementById('theme-toggle').addEventListener('click', () => {
-        const isLight = document.body.getAttribute('data-theme') === 'light';
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const icon = document.querySelector('#theme-toggle i');
         if (isLight) {
-            document.body.removeAttribute('data-theme');
+            document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('theme', 'dark');
             if (icon) icon.className = 'fas fa-sun';
         } else {
-            document.body.setAttribute('data-theme', 'light');
+            document.documentElement.setAttribute('data-theme', 'light');
             localStorage.setItem('theme', 'light');
             if (icon) icon.className = 'fas fa-moon';
         }

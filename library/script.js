@@ -403,26 +403,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 테마 토글
     themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         
-        if (newTheme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-        } else {
+        if (isLight) {
             document.documentElement.removeAttribute('data-theme');
+            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+            localStorage.setItem('library-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
             themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            localStorage.setItem('library-theme', 'light');
         }
-        localStorage.setItem('library-theme', newTheme);
     });
 
     // 초기 테마 설정
-    const savedTheme = localStorage.getItem('library-theme') || 'light';
-    if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-    } else {
+    const savedTheme = localStorage.getItem('library-theme') || 'dark'; // 기본 다크
+    if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
         themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
     }
 
     // 12. 직접 입력 로직

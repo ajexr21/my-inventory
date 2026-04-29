@@ -4,7 +4,18 @@
     --card: #1E293B;
     --text: #F8FAFC;
     --text-sub: #94A3B8;
+    --border: rgba(255, 255, 255, 0.1);
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     --c-dad: #3B82F6; --c-mom: #F43F5E; --c-kh: #10B981; --c-kb: #F59E0B; --c-ke: #EC4899;
+}
+
+[data-theme="light"] {
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --text: #1E293B;
+    --text-sub: #64748B;
+    --border: rgba(0, 0, 0, 0.05);
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 * { 
@@ -45,7 +56,8 @@ body {
 }
 
 .back-btn { color: var(--text); font-size: 1.3rem; text-decoration: none; }
-.theme-toggle { background: var(--card); border: 1px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); }
+.theme-toggle { background: var(--card); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); box-shadow: var(--shadow); transition: all 0.2s; }
+.theme-toggle:active { transform: scale(0.9); }
 
 .app-main {
     max-width: 800px;
@@ -62,13 +74,18 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
+[data-theme="light"] .summary-card {
+    background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+}
+
 .filter-bar { display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
-.filter-btn { padding: 8px 16px; border-radius: 14px; border: none; background: var(--card); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; }
-.filter-btn.active { background: var(--primary); color: white; }
+.filter-btn { padding: 8px 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); }
+.filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
 .diary-list { display: flex; flex-direction: column; gap: 16px; }
-.diary-card { background: var(--card); border-radius: 24px; padding: 24px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-.diary-card.add-card { border: 2px dashed rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); display: flex; justify-content: center; padding: 30px; color: var(--primary); font-weight: 700; }
+.diary-card { background: var(--card); border-radius: 24px; padding: 24px; border: 1px solid var(--border); cursor: pointer; box-shadow: var(--shadow); transition: transform 0.2s; }
+.diary-card:active { transform: scale(0.98); }
+.diary-card.add-card { border: 2px dashed var(--primary); background: rgba(139,92,246,0.05); display: flex; justify-content: center; padding: 30px; color: var(--primary); font-weight: 700; }
 
 /* --- Write Modal --- */
 .modal { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
@@ -117,8 +134,8 @@ body {
 
 .input-group label { display: block; font-size: 14px; margin-bottom: 8px; color: var(--primary); font-weight: 800; letter-spacing: 0.1em; }
 
-.title-input { width: 100%; background: transparent !important; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: white !important; font-size: 1.2rem; font-weight: 700; padding: 15px 0; margin-bottom: 15px; outline: none; }
-.content-input { width: 100%; min-height: 180px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 1rem; padding: 15px; outline: none; resize: none; line-height: 1.6; }
+.title-input { width: 100%; background: transparent !important; border: none; border-bottom: 1px solid var(--border); color: var(--text) !important; font-size: 1.2rem; font-weight: 700; padding: 15px 0; margin-bottom: 15px; outline: none; }
+.content-input { width: 100%; min-height: 180px; background: rgba(128,128,128,0.05); border-radius: 15px; border: 1px solid var(--border); color: var(--text); font-size: 1rem; padding: 15px; outline: none; resize: none; line-height: 1.6; }
 
 /* --- 비밀번호 폰트 통일 (Pretendard) --- */
 .password-box { margin-top: 15px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 12px; border: 1px solid var(--primary); }
