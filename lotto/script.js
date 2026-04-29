@@ -27,14 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let lottoData = []; // DB에서 가져올 예정
     let winningNumbersCache = JSON.parse(localStorage.getItem('winningNumbersCache')) || {};
 
-    // Supabase 설정
-    const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
+    // Supabase 설정 (config.js 로드됨)
     let _supabase = null;
 
     async function initLottoApp() {
         try {
-            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
             await loadLottoData();
             
             // 실시간 구독
@@ -62,6 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lottoData = data;
             // 로컬 스토리지도 백업용으로 업데이트
             localStorage.setItem('myLottoData', JSON.stringify(lottoData));
+            
+            // 등록된 모든 회차의 당첨 번호 조회 시작
+            const rounds = [...new Set(lottoData.map(t => t.round))];
+            rounds.forEach(r => fetchWinningNumbersForRound(r));
+            
             renderLottoList();
         }
     }
@@ -395,15 +398,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // 전역으로 노출하여 HTML에서 호출 가능하도록
     window.deleteTicket = deleteTicket;
 
-    // API 통신 및 당첨 확인 로직
+    // API 통신 및 당첨 확인 로직 (Supabase 캐싱 적용)
     async function fetchWinningNumbersForRound(round) {
         if (winningNumbersCache[round]) {
-            renderLottoList(); // 캐시가 있으면 렌더링
+            renderLottoList(); // 로컬 캐시가 있으면 렌더링
             return;
         }
 
         try {
-            // CORS 우회를 위해 AllOrigins 프록시 사용
+            // 1. Supabase DB에서 먼저 조회 (네트워크 캐싱)
+            if (_supabase) {
+                const { data: dbData, error: dbError } = await _supabase
+                    .from('lotto_results')
+                    .select('*')
+                    .eq('round', round)
+                    .single();
+
+                if (!dbError && dbData) {
+                    console.log(`[Lotto] ${round}회차 데이터를 DB에서 불러왔습니다.`);
+                    winningNumbersCache[round] = {
+                        numbers: dbData.numbers,
+                        bonus: dbData.bonus,
+                        date: dbData.draw_date
+                    };
+                    saveData();
+                    renderLottoList();
+                    return;
+                }
+            }
+
+            // 2. DB에 없으면 외부 API 호출
             const apiUrl = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${round}`;
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
             
@@ -417,12 +441,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     lottoResult.drwtNo4, lottoResult.drwtNo5, lottoResult.drwtNo6
                 ];
                 const bonusNum = lottoResult.bnusNo;
+                const drawDate = lottoResult.drwNoDate;
 
                 winningNumbersCache[round] = {
                     numbers: winNums,
                     bonus: bonusNum,
-                    date: lottoResult.drwNoDate
+                    date: drawDate
                 };
+
+                // 3. 외부 API에서 가져온 결과를 DB에 저장 (다음 조회를 위해)
+                if (_supabase) {
+                    await _supabase.from('lotto_results').upsert({
+                        round: round,
+                        numbers: winNums,
+                        bonus: bonusNum,
+                        draw_date: drawDate
+                    });
+                    console.log(`[Lotto] ${round}회차 데이터를 DB에 캐싱했습니다.`);
+                }
+
                 saveData();
                 renderLottoList();
             } else if (round === 1221) {
@@ -435,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveData();
                 renderLottoList();
             } else {
-                console.log(`${round}회차 당첨 정보가 없습니다.`);
+                console.log(`${round}회차 당첨 정보가 아직 없습니다.`);
             }
         } catch (error) {
             console.error("당첨 번호 조회 실패:", error);
@@ -510,11 +547,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const winInfo = winningNumbersCache[ticket.round];
             let ticketHtml = `
                 <div class="ticket-card">
-                    <button class="delete-btn" onclick="deleteTicket('${ticket.id}')" title="삭제"><i class="fas fa-times"></i></button>
+                    <button class="delete-btn" onclick="deleteTicket('${ticket.id}')" title="삭제"><i class="fas fa-minus"></i></button>
                     <div class="ticket-header">
-                        <div class="ticket-round">${ticket.round}회차</div>
+                        <div class="ticket-round">제${ticket.round}회</div>
                         <div class="ticket-status ${winInfo ? '' : 'status-waiting'}">
-                            ${winInfo ? `<span style="font-size: 12px; margin-right: 8px;">${winInfo.date}</span> 추첨 완료` : '추첨 대기중'}
+                            ${winInfo ? `<span style="font-size: 11px; margin-right: 5px;">${winInfo.date}</span> 추첨 완료` : '추첨 대기중'}
                         </div>
                     </div>
             `;
@@ -802,11 +839,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 초기 로드 시 당첨 데이터 한 번 체크하고 렌더링
-    const rounds = [...new Set(lottoData.map(t => t.round))];
-    rounds.forEach(r => fetchWinningNumbersForRound(r));
+    // 초기 로드 시퀀스 최적화
     updateLatestLottoResult();
-    initLottoApp(); // DB 초기화 및 렌더링 시작
+    initLottoApp(); // DB 초기화 -> loadLottoData -> 각 회차 당첨 번호 조회 순으로 진행됨
     generateGemmaPicks(); // 초기 젬마 추천 생성
 });
 

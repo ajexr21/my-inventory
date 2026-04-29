@@ -1,7 +1,4 @@
-const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
-const TELEGRAM_TOKEN = '8602265566:AAFdUXXrm3ILahVrWANG6prjy2-Vu0OgeL4';
-const TELEGRAM_CHAT_ID = '8731103204';
+// Supabase 설정 (config.js에서 전역 변수로 로드됨)
 let _supabase = null;
 
 let transactions = [];
@@ -39,7 +36,7 @@ initTheme();
 async function initApp() {
     initTheme();
     try {
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         
         // 오늘 날짜 기본 설정
         document.getElementById('tr-date').valueAsDate = new Date();
@@ -91,7 +88,7 @@ async function initApp() {
     // 수입/지출 타입 변경 시 카테고리 업데이트
     const typeRadios = document.querySelectorAll('input[name="type"]');
     typeRadios.forEach(radio => {
-        radio.onchange = () => updateCategories();
+        radio.onchange = () => updateCategoriesAndMethods();
     });
 
     // 금액 입력 시 쉼표 표시
@@ -121,19 +118,15 @@ async function initApp() {
 }
 
 async function sendTelegramMessage(text) {
+    if (!_supabase) return;
     try {
-        const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-        await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: text,
-                parse_mode: 'HTML'
-            })
+        const { data, error } = await _supabase.functions.invoke('send-telegram', {
+            body: { text: text }
         });
+        if (error) throw error;
+        console.log('텔레그램 알림 성공:', data);
     } catch (e) {
-        console.error('Telegram notification failed:', e);
+        console.error('텔레그램 알림 실패 (Edge Function):', e);
     }
 }
 
@@ -181,11 +174,20 @@ const CATEGORIES = {
     income: ['급여', '상여', '용돈', '예금이자', '금융수익', '기타']
 };
 
-function updateCategories(selectedCategory = null) {
+const METHODS = {
+    expense: ['신용카드', '체크카드', '지역화폐', '현금', '기타'],
+    income: ['현금', '수표', '지역화폐', '상품권', '기타']
+};
+
+function updateCategoriesAndMethods(selectedCategory = null, selectedMethod = null) {
     const type = document.querySelector('input[name="type"]:checked').value;
     const catSelect = document.getElementById('tr-category');
-    if (!catSelect) return;
+    const methodSelector = document.getElementById('method-selector');
+    const methodLabel = document.getElementById('method-label');
+    
+    if (!catSelect || !methodSelector) return;
 
+    // 카테고리 업데이트
     catSelect.innerHTML = '';
     const emojiMap = {
         '식비': '🍔', '교통': '🚗', '생활': '🏠', '쇼핑': '🛍️', '저축/예금': '🏦', '기타': '🎁',
@@ -198,6 +200,26 @@ function updateCategories(selectedCategory = null) {
         option.innerText = `${emojiMap[cat] || '✨'} ${cat}`;
         if (cat === selectedCategory) option.selected = true;
         catSelect.appendChild(option);
+    });
+
+    // 방식 업데이트 (칩 스타일)
+    methodSelector.innerHTML = '';
+    methodLabel.innerText = type === 'income' ? '수입 방식' : '지출 방식';
+    
+    METHODS[type].forEach(method => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        // 수정 시에는 저장된 값, 새 등록 시에는 첫 번째 항목 기본 선택
+        if (method === selectedMethod || (!selectedMethod && method === METHODS[type][0])) {
+            chip.classList.add('active');
+        }
+        chip.dataset.method = method;
+        chip.innerText = method;
+        chip.onclick = () => {
+            methodSelector.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        };
+        methodSelector.appendChild(chip);
     });
 }
 
@@ -217,8 +239,7 @@ async function loadTransactions() {
         .select('*')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth)
-        .order('date', { ascending: false })
-        .order('id', { ascending: false });
+        .order('date', { ascending: false });
 
     // 2. 이월 금액 계산 (이번 달 시작 전까지의 모든 합계)
     const { data: prevData, error: prevError } = await _supabase
@@ -396,16 +417,17 @@ function renderTransactions() {
         item.className = 'transaction-item';
         item.onclick = () => openEditModal(t);
         
-        const dateObj = new Date(t.created_at || t.date);
+        const dateObj = new Date(t.date);
         const date = dateObj.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
         const time = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const fullDateDisplay = `${date} <small style="opacity:0.8;">${time}</small>`;
+        const methodDisplay = t.method ? ` • <span style="color:var(--text-sub);">${t.method}</span>` : '';
+        const fullDateDisplay = `${date} <small style="opacity:0.8;">${time}</small>${methodDisplay} • ${t.category}`;
         const userName = t.user_name ? `<small style="color:var(--primary); font-weight:bold;">${t.user_name}</small> ` : '';
         
         item.innerHTML = `
             <div class="tr-info">
                 <h3>${userName}${t.description}</h3>
-                <p>${fullDateDisplay} • ${t.category}</p>
+                <p>${fullDateDisplay}</p>
             </div>
             <div class="tr-amount ${t.type === 'income' ? 'plus' : 'minus'}">
                 ${t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}원
@@ -424,8 +446,14 @@ document.getElementById('open-modal-btn').onclick = () => {
     document.getElementById('modal-title').innerText = '새 내역 추가';
     form.reset();
     document.getElementById('type-expense').checked = true;
-    updateCategories(); // 카테고리 초기화
-    document.getElementById('tr-date').valueAsDate = new Date();
+    updateCategoriesAndMethods(); // 카테고리 및 방식 초기화
+    
+    const now = new Date();
+    document.getElementById('tr-date').valueAsDate = now;
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('tr-time').value = `${hours}:${minutes}`;
+    
     document.getElementById('delete-btn').style.display = 'none';
     modal.classList.add('active');
 };
@@ -437,14 +465,19 @@ window.openEditModal = (t) => {
     document.getElementById('modal-title').innerText = '내역 수정';
     document.getElementById(t.type === 'income' ? 'type-income' : 'type-expense').checked = true;
     
-    updateCategories(t.category); // 카테고리 업데이트 및 선택
+    updateCategoriesAndMethods(t.category, t.method); // 카테고리 및 방식 업데이트 및 선택
 
     // 가족 칩 선택 복구
     document.querySelectorAll('.chip').forEach(c => {
         c.classList.toggle('active', c.dataset.name === t.user_name);
     });
 
-    document.getElementById('tr-date').value = t.date;
+    const dateObj = new Date(t.date);
+    const datePart = dateObj.toISOString().split('T')[0];
+    const timePart = dateObj.toTimeString().split(' ')[0].substring(0, 5);
+
+    document.getElementById('tr-date').value = datePart;
+    document.getElementById('tr-time').value = timePart;
     document.getElementById('tr-description').value = t.description;
     document.getElementById('tr-amount').value = t.amount.toLocaleString();
     modal.classList.add('active');
@@ -457,11 +490,12 @@ form.onsubmit = async (e) => {
 
     const formData = {
         type: form.querySelector('input[name="type"]:checked').value,
-        user_name: document.querySelector('.chip.active').dataset.name,
-        date: document.getElementById('tr-date').value,
+        user_name: document.querySelector('#family-selector .chip.active').dataset.name,
+        date: `${document.getElementById('tr-date').value}T${document.getElementById('tr-time').value}:00`,
         description: document.getElementById('tr-description').value,
         amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
-        category: document.getElementById('tr-category').value
+        category: document.getElementById('tr-category').value,
+        method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
     };
 
     let error;
@@ -482,6 +516,7 @@ form.onsubmit = async (e) => {
         const msg = `<b>[가계부 알림]</b>\n` +
                     `대상: ${formData.user_name}\n` +
                     `구분: ${typeLabel}\n` +
+                    `방법: ${formData.method}\n` +
                     `내용: ${formData.description}\n` +
                     `금액: ${formData.amount.toLocaleString()}원\n` +
                     `카테고리: ${formData.category}`;

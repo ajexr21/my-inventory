@@ -96,9 +96,7 @@ body {
 }
 
 [data-theme="dark"] .premium-title {
-    color: #f1f2f6 !important;
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
+    /* 다크 모드에서도 그라데이션 유지 */
 }
 
 [data-theme="dark"] #latest-round-title,
@@ -131,7 +129,7 @@ body {
     font-size: 1.4rem;
     font-weight: 900;
     letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, #FF9A8B 0%, #FF6A88 55%, #FF99AC 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -285,11 +283,15 @@ body {
 }
 
 .ticket-status {
-    font-size: 14px;
+    font-size: 12px;
     padding: 4px 12px;
     border-radius: 20px;
     background: #fff0f0;
     color: var(--secondary-color);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
 }
 
 .status-waiting { color: var(--text-muted); }
@@ -299,19 +301,24 @@ body {
 .game-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 8px;
+    width: 100%;
+    padding-right: 12px;
 }
 
 .game-label {
     font-size: 14px;
     color: var(--text-muted);
     width: 24px;
+    flex-shrink: 0;
 }
 
 .game-numbers {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     flex: 1;
+    justify-content: center;
     flex-wrap: nowrap;
     margin: 4px 0;
 }
@@ -325,7 +332,7 @@ body {
     justify-content: center;
     font-size: 15px;
     font-weight: 900;
-    color: #111;
+    color: #fff;
     background-color: #fff;
     flex-shrink: 0;
     box-shadow: none;
@@ -341,8 +348,9 @@ body {
 .game-result {
     font-size: 14px;
     font-weight: bold;
-    width: 40px;
+    width: 45px;
     text-align: right;
+    flex-shrink: 0;
 }
 
 /* 스캐너 */
@@ -423,16 +431,30 @@ body {
 
 .delete-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    background: none;
+    top: 15px;
+    right: 15px;
+    background: #ff4757;
     border: none;
-    color: var(--text-muted);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 10px;
+    box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
+    transition: all 0.2s;
 }
+
 .delete-btn:hover {
-    color: #ef4444;
+    background: #ff6b81;
+    transform: scale(1.1);
+}
+
+.delete-btn:active {
+    transform: scale(0.9);
 }
 
 /* Pension Lottery Styles */

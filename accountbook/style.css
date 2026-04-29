@@ -411,16 +411,17 @@ main {
 }
 
 /* 가족 멤버 선택기 */
-.family-selector {
+.family-selector, .method-selector {
     display: flex;
-    gap: 10px;
-    overflow-x: auto;
+    gap: 8px;
     padding: 5px 0 15px;
-    scrollbar-width: none;
 }
 
-.family-selector::-webkit-scrollbar {
-    display: none;
+.family-selector .chip, .method-selector .chip {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 5px;
 }
 
 .chip {

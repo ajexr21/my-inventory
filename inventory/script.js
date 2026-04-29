@@ -4,10 +4,7 @@
  */
 
 // --- 1. 기본 설정 및 상태 ---
-const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
-const TELEGRAM_TOKEN = '8602265566:AAFdUXXrm3ILahVrWANG6prjy2-Vu0OgeL4';
-const TELEGRAM_CHAT_ID = '8731103204';
+// Supabase 설정 (config.js에서 전역 변수로 로드됨)
 let _supabase = null;
 
 let items = [];
@@ -85,7 +82,7 @@ async function initApp() {
             return;
         }
         
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         await applyAutoDeduct(); // 자동 차감 엔진 실행
         await loadItems();
         
@@ -103,19 +100,15 @@ async function initApp() {
 }
 
 async function sendTelegramMessage(text) {
+    if (!_supabase) return;
     try {
-        const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-        await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: text,
-                parse_mode: 'HTML'
-            })
+        const { data, error } = await _supabase.functions.invoke('send-telegram', {
+            body: { text: text }
         });
+        if (error) throw error;
+        console.log('텔레그램 알림 성공:', data);
     } catch (e) {
-        console.error('Telegram notification failed:', e);
+        console.error('텔레그램 알림 실패 (Edge Function):', e);
     }
 }
 
