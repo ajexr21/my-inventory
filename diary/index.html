@@ -18,11 +18,17 @@
                     <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left-long"></i></a>
                     <h1 class="premium-title">우리집 일기장</h1>
                 </div>
-                <button id="theme-toggle" class="theme-toggle"><i class="fas fa-sun"></i></button>
+                <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+                    <button id="search-toggle" class="theme-toggle"><i class="fas fa-search"></i></button>
+                    <button id="theme-toggle" class="theme-toggle"><i class="fas fa-sun"></i></button>
+                </div>
             </div>
         </header>
 
         <main class="app-main">
+            <div class="search-bar" id="search-bar" style="display:none; margin-bottom: 20px;">
+                <input type="text" id="diary-search" placeholder="일기 내용을 검색해보세요..." style="width:100%; padding:14px 20px; border-radius:18px; border:none; background:var(--card); color:var(--text); font-size:0.95rem; outline:none; border: 1px solid var(--border); box-shadow: var(--shadow);">
+            </div>
             <section class="summary-card">
                 <div class="intro-content">
                     <h2>오늘 우리 가족은<br>어떤 하루였나요?</h2>

@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initApp() {
         try {
             _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            
+            // 세션 체크 추가
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '../login.html';
+                return;
+            }
+
             await fetchBooks();
             
             // 실시간 구독
@@ -373,6 +381,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             tabContents.forEach(c => c.classList.remove('active'));
             document.getElementById(target).classList.add('active');
+
+            // 성장 프로필 카드 제어 (책 등록 탭일 때 숨김)
+            const profileCard = document.querySelector('.profile-card');
+            if (profileCard) {
+                if (target === 'tab-scan') {
+                    profileCard.style.display = 'none';
+                } else {
+                    profileCard.style.display = 'block';
+                }
+            }
 
             // 페이지 상단으로 스크롤
             window.scrollTo({ top: 0, behavior: 'smooth' });

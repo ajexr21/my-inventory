@@ -186,7 +186,7 @@
             margin-top: 15px;
         }
 
-        #theme-toggle {
+        #theme-toggle, #logout-btn {
             background: var(--card-bg);
             border: none;
             width: 44px;
@@ -218,7 +218,10 @@
     <div class="container">
         <header>
             <div class="logo">Smart Home Hub</div>
-            <button id="theme-toggle"><i class="fas fa-moon"></i></button>
+            <div style="display: flex; gap: 10px;">
+                <button id="logout-btn" title="로그아웃"><i class="fas fa-right-from-bracket"></i></button>
+                <button id="theme-toggle" title="테마 변경"><i class="fas fa-moon"></i></button>
+            </div>
         </header>
 
         <div class="welcome-container" style="margin-bottom: 40px;">
@@ -342,6 +345,23 @@
     <script>
         // Supabase 설정 (config.js 로드됨)
         const _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+        // 세션 체크 (RLS 대응)
+        async function checkAuth() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            console.log("인증됨:", session.user.email);
+            updateDashboard(); // 세션이 있을 때만 대시보드 업데이트 시작
+        }
+
+        // 로그아웃 처리
+        document.getElementById('logout-btn').onclick = async () => {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        };
 
         // 명언 리스트 (60개 이상)
         const QUOTES = [
@@ -646,7 +666,7 @@
         }
 
         displayQuote();
-        updateDashboard();
+        checkAuth(); // updateDashboard 대신 checkAuth 실행
 
         // 뒤로 가기 등으로 페이지가 다시 나타날 때 데이터 갱신
         window.addEventListener('pageshow', (event) => {

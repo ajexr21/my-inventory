@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initLottoApp() {
         try {
             _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            
+            // 세션 체크 추가
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '../login.html';
+                return;
+            }
+
             await loadLottoData();
             
             // 실시간 구독

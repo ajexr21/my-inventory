@@ -6,6 +6,7 @@ let diaries = [];
 let currentFilter = 'all';
 let selectedAuthor = '';
 let currentViewingId = null;
+let searchTerm = '';
 
 // DOM 요소
 const diaryList = document.getElementById('diary-list');
@@ -16,7 +17,14 @@ const isPrivateToggle = document.getElementById('is-private');
 const passwordArea = document.getElementById('password-area');
 
 // 초기화
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 세션 체크 추가
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) {
+        window.location.href = '../login.html';
+        return;
+    }
+
     window.initTheme();
     window.renderDiaries();
     window.fetchDiaries();
@@ -54,7 +62,28 @@ window.fetchDiaries = async function() {
 
 window.renderDiaries = function() {
     if (!diaryList) return;
-    const filtered = currentFilter === 'all' ? diaries : diaries.filter(d => d.author === currentFilter);
+    
+    // 작성자 필터 + 검색어 필터 적용
+    const filtered = diaries.filter(d => {
+        const matchesAuthor = currentFilter === 'all' || d.author === currentFilter;
+        
+        let matchesSearch = !searchTerm;
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            const authorMatch = d.author.toLowerCase().includes(searchLower);
+            
+            if (d.is_public) {
+                // 공개 일기: 저자 이름 또는 내용 검색 가능
+                const contentMatch = d.content.toLowerCase().includes(searchLower);
+                matchesSearch = authorMatch || contentMatch;
+            } else {
+                // 비밀 일기: 저자 이름으로만 검색 가능 (내용 보안 유지)
+                matchesSearch = authorMatch;
+            }
+        }
+        return matchesAuthor && matchesSearch;
+    });
+
     let html = `
         <div class="diary-card add-card" onclick="window.openModal(document.getElementById('write-modal'))">
             <div class="add-content">
@@ -235,6 +264,27 @@ window.initEventListeners = function() {
     document.getElementById('confirm-auth-btn').addEventListener('click', window.checkPassword);
     document.getElementById('delete-diary-btn').addEventListener('click', window.deleteDiary);
     document.getElementById('cancel-write-btn').addEventListener('click', () => window.closeModal(writeModal));
+
+    // 검색 관련 이벤트
+    const searchToggle = document.getElementById('search-toggle');
+    const searchBar = document.getElementById('search-bar');
+    const searchInput = document.getElementById('diary-search');
+
+    if (searchToggle) {
+        searchToggle.addEventListener('click', () => {
+            const isVisible = searchBar.style.display === 'block';
+            searchBar.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) searchInput.focus();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            window.renderDiaries();
+        });
+    }
+
     const closeViewBtn = document.querySelector('.close-view');
     if (closeViewBtn) closeViewBtn.addEventListener('click', () => window.closeModal(viewModal));
 };

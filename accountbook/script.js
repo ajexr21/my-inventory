@@ -38,6 +38,13 @@ async function initApp() {
     try {
         _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         
+        // 세션 체크 추가
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (!session) {
+            window.location.href = '../login.html';
+            return;
+        }
+
         // 오늘 날짜 기본 설정
         document.getElementById('tr-date').valueAsDate = new Date();
         
@@ -522,7 +529,8 @@ form.onsubmit = async (e) => {
                     `카테고리: ${formData.category}`;
         sendTelegramMessage(msg);
     } else {
-        alert('저장에 실패했습니다.');
+        console.error('저장 에러 상세:', error);
+        alert('저장에 실패했습니다: ' + error.message);
     }
 };
 
