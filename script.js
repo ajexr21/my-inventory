@@ -244,9 +244,12 @@ async function loadTransactions() {
     // 현재 월 표시
     document.getElementById('current-month').innerText = `${viewDate.getFullYear()}년 ${viewDate.getMonth() + 1}월`;
     
-    // 이번 달 범위 계산 (로컬 시간 기준을 ISO UTC로 변환)
-    const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1, 0, 0, 0).toISOString();
-    const endOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
+    // 이번 달 범위 계산 (시간대 변환 없이 로컬 문자열 기준)
+    const year = viewDate.getFullYear();
+    const month = String(viewDate.getMonth() + 1).padStart(2, '0');
+    const startOfMonth = `${year}-${month}-01T00:00:00`;
+    const lastDay = new Date(year, viewDate.getMonth() + 1, 0).getDate();
+    const endOfMonth = `${year}-${month}-${lastDay}T23:59:59`;
 
     // 1. 이번 달 내역 조회
     const { data: monthData, error: monthError } = await _supabase
@@ -492,18 +495,10 @@ window.openEditModal = (t) => {
         c.classList.toggle('active', c.dataset.name === t.user_name);
     });
 
-    const dateObj = new Date(t.date);
-    
-    // 로컬 시간 기준 날짜 추출
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const datePart = `${year}-${month}-${day}`;
-    
-    // 로컬 시간 기준 시:분 추출
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    const timePart = `${hours}:${minutes}`;
+    // DB에 저장된 로컬 시간 문자열을 처리
+    const dateStr = t.date.replace(' ', 'T'); // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+    const [datePart, timePartFull] = dateStr.split('T');
+    const timePart = timePartFull.substring(0, 5); // "HH:mm"
 
     document.getElementById('tr-date').value = datePart;
     document.getElementById('tr-time').value = timePart;
@@ -517,20 +512,18 @@ form.onsubmit = async (e) => {
     e.preventDefault();
     if (!_supabase) return;
 
-        const dateParts = document.getElementById('tr-date').value.split('-');
-        const timeParts = document.getElementById('tr-time').value.split(':');
-        // 연, 월(0-11), 일, 시, 분 순서로 로컬 날짜 객체 생성
-        const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
+        const dateVal = document.getElementById('tr-date').value;
+        const timeVal = document.getElementById('tr-time').value;
 
         const formData = {
             type: form.querySelector('input[name="type"]:checked').value,
             user_name: document.querySelector('#family-selector .chip.active').dataset.name,
-            date: localDate.toISOString(),
+            date: `${dateVal}T${timeVal}:00`, // 변환 없이 로컬 문자열 그대로 저장
             description: document.getElementById('tr-description').value,
-        amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
-        category: document.getElementById('tr-category').value,
-        method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
-    };
+            amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
+            category: document.getElementById('tr-category').value,
+            method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
+        };
 
     let error;
     if (editingId) {
