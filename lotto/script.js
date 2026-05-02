@@ -880,8 +880,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const hours = today.getHours();
         const minutes = today.getMinutes();
         
-        // 토요일 20:40 이후부터 최신 회차로 간주
-        if (day < 6 || (day === 6 && (hours < 20 || (hours === 20 && minutes < 40)))) {
+        // 토요일 20:45분 추첨 결과 발표 전까지는 이전 회차를 최신으로 간주
+        // (기존 day < 6 조건이 일요일~금요일까지 모두 감소시켜버리는 버그가 있어 수정함)
+        if (day === 6 && (hours < 20 || (hours === 20 && minutes < 45))) {
             round -= 1;
         }
         return round;
