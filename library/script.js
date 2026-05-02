@@ -218,20 +218,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const config = { 
             fps: 20, 
-            qrbox: { width: 280, height: 160 },
+            qrbox: { width: 300, height: 180 }, // 영역을 키워 더 멀리서도 찍을 수 있게 함
             aspectRatio: 1.0,
             videoConstraints: {
                 facingMode: "environment",
-                focusMode: "continuous",
-                advanced: [{ focusMode: "macro" }]
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                focusMode: "continuous"
             }
         };
         
         html5QrcodeScanner.start(
-            { 
-                facingMode: "environment",
-                advanced: [{ focusMode: "macro" }] 
-            },
+            { facingMode: "environment" }, // 강제 macro 제거하여 호환성 높임
             config,
             async (decodedText) => {
                 // 바코드 인식 성공 (ISBN)
@@ -240,7 +238,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         ).then(() => {
             stopScanBtn.classList.remove('hidden');
-        }).catch(err => console.error("Scanner error:", err));
+        }).catch(err => {
+            console.error("Scanner error:", err);
+            // 오류 시 기본 설정으로 재시도
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (txt) => {
+                stopScanner();
+                await searchBookByISBN(txt);
+            });
+        });
     }
 
     function stopScanner() {

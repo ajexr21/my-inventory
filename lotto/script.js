@@ -152,26 +152,21 @@ document.addEventListener('DOMContentLoaded', () => {
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
         }
         
-        // 카메라 설정 상향 (해상도 및 포커스 개선 - 접사 모드 지향)
+        // 카메라 설정 최적화 (초점 문제 해결을 위해 강제 매크로 제거 및 영역 확대)
         const config = { 
             fps: 20, 
-            qrbox: { width: 250, height: 250 },
+            qrbox: { width: 280, height: 280 }, // 인식 영역 확대
             aspectRatio: 1.0,
             videoConstraints: {
                 facingMode: "environment",
-                width: { min: 640, ideal: 1280, max: 1920 },
-                height: { min: 480, ideal: 720, max: 1080 },
-                frameRate: { ideal: 30 },
-                focusMode: "continuous",
-                advanced: [{ focusMode: "macro" }, { focusDistance: 0.1 }]
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                focusMode: "continuous"
             }
         };
         
         html5QrcodeScanner.start(
-            { 
-                facingMode: "environment",
-                advanced: [{ focusMode: "macro" }]
-            },
+            { facingMode: "environment" },
             config,
             onScanSuccess,
             onScanFailure
@@ -179,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stopScanBtn.classList.remove('hidden');
         }).catch(err => {
             console.error("Scanner error:", err);
-            // 권한 오류 시 메시지
             qrReaderDiv.innerHTML = '<p style="padding: 20px;">카메라를 시작할 수 없습니다. 권한 설정을 확인해주세요.</p>';
         });
     }
