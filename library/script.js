@@ -217,13 +217,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const config = { 
-            fps: 10, 
-            qrbox: { width: 250, height: 150 },
-            aspectRatio: 1.0
+            fps: 20, 
+            qrbox: { width: 280, height: 160 },
+            aspectRatio: 1.0,
+            videoConstraints: {
+                facingMode: "environment",
+                focusMode: "continuous",
+                advanced: [{ focusMode: "macro" }]
+            }
         };
         
         html5QrcodeScanner.start(
-            { facingMode: "environment" },
+            { 
+                facingMode: "environment",
+                advanced: [{ focusMode: "macro" }] 
+            },
             config,
             async (decodedText) => {
                 // 바코드 인식 성공 (ISBN)

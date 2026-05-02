@@ -152,21 +152,26 @@ document.addEventListener('DOMContentLoaded', () => {
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
         }
         
-        // 카메라 설정 상향 (해상도 및 포커스 개선)
+        // 카메라 설정 상향 (해상도 및 포커스 개선 - 접사 모드 지향)
         const config = { 
-            fps: 15, 
+            fps: 20, 
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0,
             videoConstraints: {
                 facingMode: "environment",
                 width: { min: 640, ideal: 1280, max: 1920 },
                 height: { min: 480, ideal: 720, max: 1080 },
-                frameRate: { ideal: 30 }
+                frameRate: { ideal: 30 },
+                focusMode: "continuous",
+                advanced: [{ focusMode: "macro" }, { focusDistance: 0.1 }]
             }
         };
         
         html5QrcodeScanner.start(
-            { facingMode: "environment" },
+            { 
+                facingMode: "environment",
+                advanced: [{ focusMode: "macro" }]
+            },
             config,
             onScanSuccess,
             onScanFailure
