@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     };
 
+    // 로딩 처리
+    window.showLoading = () => window.openModal(document.getElementById('loading-modal'));
+    window.hideLoading = () => window.closeModal(document.getElementById('loading-modal'));
+
     // 3. State
     let _supabase = null;
     let books = [];
@@ -296,23 +300,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 9. 도서 검색 (알라딘 우선 -> 카카오 백업 전략)
-    async function searchBookByISBN(isbn) {
+    async function searchBookByISBN(isbn, isManual = false) {
         try {
             if (!_supabase) return;
+            window.showLoading();
 
             // 1. 알라딘 검색 시도 (최신/한정판 도서에 강함)
             const aladinBook = await fetchFromAladin(isbn);
             if (aladinBook) {
+                if (isManual) {
+                    // 직접 입력 모드일 때는 폼에 채워줌
+                    document.getElementById('manual-title').value = aladinBook.title;
+                    document.getElementById('manual-author').value = aladinBook.author;
+                    window.hideLoading();
+                    return aladinBook;
+                }
                 await addNewBook(aladinBook);
+                window.hideLoading();
                 return;
             }
 
             // 2. 알라딘 실패 시 카카오 검색 시도 (서버측 Edge Function 활용)
-            console.log("알라딘에서 정보를 찾지 못해 카카오 검색을 시작합니다...");
             const { data, error } = await _supabase.functions.invoke('search-books', {
                 body: { isbn: isbn }
             });
 
+            window.hideLoading();
             if (error) throw error;
             
             if (data && data.documents && data.documents.length > 0) {
@@ -324,11 +337,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     cover_url: b.thumbnail,
                     isbn: isbn
                 };
+                
+                if (isManual) {
+                    document.getElementById('manual-title').value = bookData.title;
+                    document.getElementById('manual-author').value = bookData.author;
+                    return bookData;
+                }
                 await addNewBook(bookData);
             } else {
                 await window.customAlert(`알라딘과 카카오 모두에서 책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
             }
         } catch (error) {
+            window.hideLoading();
             console.error("도서 검색 실패:", error);
             await window.customAlert("도서 정보를 가져오는 중 오류가 발생했어요.", "오류");
         }
@@ -632,8 +652,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 12. 직접 입력 로직
+    let manualBookData = null; // ISBN 검색 결과 임시 저장
+
     manualInputBtn.addEventListener('click', () => {
+        manualBookData = null;
+        document.getElementById('manual-isbn').value = '';
+        document.getElementById('manual-title').value = '';
+        document.getElementById('manual-author').value = '';
         window.openModal(manualModal);
+    });
+
+    // ISBN으로 정보 가져오기 버튼
+    document.getElementById('fetch-isbn-btn').addEventListener('click', async () => {
+        const isbn = document.getElementById('manual-isbn').value.trim();
+        if (!isbn) {
+            await window.customAlert("ISBN 숫자를 입력해 주세요!", "알림");
+            return;
+        }
+        manualBookData = await searchBookByISBN(isbn, true);
     });
 
     closeManualBtn.addEventListener('click', () => {
@@ -643,24 +679,28 @@ document.addEventListener('DOMContentLoaded', () => {
     saveManualBtn.addEventListener('click', async () => {
         const title = document.getElementById('manual-title').value.trim();
         const author = document.getElementById('manual-author').value.trim();
+        const isbn = document.getElementById('manual-isbn').value.trim();
         
         if (!title) {
             await window.customAlert("책 이름을 알려주세요!", "입력 확인");
             return;
         }
         
-        const bookData = {
+        const bookData = manualBookData || {
             title: title,
             author: author || '작가 미상',
-            status: 'reading', // 직접 입력 시 기본값은 '읽는 중'
-            cover_url: '' // 커버는 직접 입력 시 비워둠 (향후 기본 이미지 처리)
+            isbn: isbn,
+            status: 'reading',
+            cover_url: ''
         };
+        
+        // 수동 수정된 내용 반영
+        bookData.title = title;
+        bookData.author = author;
+        bookData.isbn = isbn;
         
         await addNewBook(bookData);
         
-        // 입력 필드 초기화 및 모달 닫기
-        document.getElementById('manual-title').value = '';
-        document.getElementById('manual-author').value = '';
         window.closeModal(manualModal);
     });
 

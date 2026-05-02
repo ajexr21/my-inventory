@@ -148,6 +148,15 @@
 
                     <div class="input-container">
                         <div class="input-group-premium">
+                            <label for="manual-isbn"><i class="fas fa-barcode"></i> ISBN (바코드 숫자)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="manual-isbn" placeholder="예: 97911..." autocomplete="off" style="flex: 1;">
+                                <button id="fetch-isbn-btn" class="icon-btn" style="width: 50px; height: 50px; background: var(--primary-color); color: white; border: none;"><i class="fas fa-search"></i></button>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; padding-left: 4px;">숫자를 입력하고 돋보기를 누르면 책 정보를 찾아와요!</p>
+                        </div>
+
+                        <div class="input-group-premium">
                             <label for="manual-title"><i class="fas fa-bookmark"></i> 책 제목</label>
                             <input type="text" id="manual-title" placeholder="예: 구름빵, 달 샤베트" autocomplete="off">
                         </div>
@@ -166,6 +175,17 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 로딩 모달 (검색 중 표시) -->
+    <div id="loading-modal" class="modal hidden" style="align-items: center; justify-content: center; z-index: 3000;">
+        <div class="modal-content" style="max-width: 280px; border-radius: 28px; padding: 40px 20px; text-align: center; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(20px);">
+            <div class="search-animation" style="margin-bottom: 20px;">
+                <i class="fas fa-search" style="font-size: 3rem; color: var(--primary-color); animation: pulse 1.5s infinite;"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 10px;">책 정보를 찾는 중...</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">알라딘과 카카오를 열심히<br>뒤지고 있어요! 잠시만요 📚</p>
         </div>
     </div>
 
