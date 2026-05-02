@@ -257,7 +257,8 @@ async function loadTransactions() {
         .select('*')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('id', { ascending: false });
 
     // 2. 이월 금액 계산 (이번 달 시작 전까지의 모든 합계)
     const { data: prevData, error: prevError } = await _supabase
@@ -536,7 +537,9 @@ form.onsubmit = async (e) => {
 
     if (!error) {
         modal.classList.remove('active');
-        loadTransactions();
+        await loadTransactions();
+        // 최신 내역이 있는 상단으로 부드럽게 스크롤
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         
         // 텔레그램 알림 발송
         const typeLabel = formData.type === 'income' ? '💰 수입' : '💸 지출';
