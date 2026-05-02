@@ -655,6 +655,25 @@
                     libMessage.innerText = '지금 읽고 있는 책도 너무 재미있을 것 같아요! 📖💖';
                 }
 
+                // 6. 일기장 최신 기록 조회
+                const { data: diaryData } = await _supabase
+                    .from('house_diaries')
+                    .select('author, created_at, is_public')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (diaryData && diaryData.length > 0) {
+                    const latest = diaryData[0];
+                    document.getElementById('diary-preview-author').innerText = latest.author;
+                    
+                    const diaryMsg = document.getElementById('diary-message');
+                    if (latest.is_public) {
+                        diaryMsg.innerText = `${latest.author}님의 새로운 이야기가 등록되었습니다. ✨`;
+                    } else {
+                        diaryMsg.innerText = '비밀 이야기가 소중하게 기록되었습니다. 🔒';
+                    }
+                }
+
                 dashboardPrevValues.lotto = totalLottoGames;
                 dashboardPrevValues.lottoWin = winningLottoGames;
                 dashboardPrevValues.libFinished = finishedBooks;
