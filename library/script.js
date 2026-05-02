@@ -18,7 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeManualBtn = document.querySelector('.close-manual');
     const saveManualBtn = document.getElementById('save-manual-btn');
     
-    // 2. State
+    // 2. Global Modal Helpers (우리집 시리즈 표준)
+    window.openModal = (modal) => {
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    };
+    
+    window.closeModal = (modal) => {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    };
+
+    // 3. State
     let _supabase = null;
     let books = [];
     let html5QrcodeScanner = null;
@@ -47,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
         } catch (error) {
             console.error("초기화 에러:", error);
-            alert("서버 연결에 실패했어요. 나중에 다시 시도해 주세요!");
+            await window.customAlert("서버 연결에 실패했어요. 나중에 다시 시도해 주세요!", "오류");
         }
     }
 
@@ -282,12 +295,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 9. 도서 검색 (보안이 적용된 Supabase Edge Function 활용)
+    // 9. 도서 검색 (알라딘 우선 -> 카카오 백업 전략)
     async function searchBookByISBN(isbn) {
         try {
             if (!_supabase) return;
 
-            // 서버 측 함수 호출 (API 키는 서버 안에 숨겨져 있음)
+            // 1. 알라딘 검색 시도 (최신/한정판 도서에 강함)
+            const aladinBook = await fetchFromAladin(isbn);
+            if (aladinBook) {
+                await addNewBook(aladinBook);
+                return;
+            }
+
+            // 2. 알라딘 실패 시 카카오 검색 시도 (서버측 Edge Function 활용)
+            console.log("알라딘에서 정보를 찾지 못해 카카오 검색을 시작합니다...");
             const { data, error } = await _supabase.functions.invoke('search-books', {
                 body: { isbn: isbn }
             });
@@ -305,11 +326,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 await addNewBook(bookData);
             } else {
-                alert(`책 정보를 찾지 못했어요. (ISBN: ${isbn})\n나중에 직접 입력 기능을 추가해 드릴게요!`);
+                await window.customAlert(`알라딘과 카카오 모두에서 책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
             }
         } catch (error) {
             console.error("도서 검색 실패:", error);
-            alert("도서 정보를 가져오는 중 오류가 발생했어요.");
+            await window.customAlert("도서 정보를 가져오는 중 오류가 발생했어요.", "오류");
+        }
+    }
+
+    // 알라딘 웹 스크래핑 (API 키 없이 AllOrigins 프록시 활용)
+    async function fetchFromAladin(isbn) {
+        try {
+            const targetUrl = `https://www.aladin.co.kr/shop/wproduct.aspx?ISBN=${isbn}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&timestamp=${Date.now()}`;
+            
+            const response = await fetch(proxyUrl);
+            if (!response.ok) return null;
+            
+            const data = await response.json();
+            const html = data.contents;
+            if (!html || html.includes("존재하지 않는 상품입니다")) return null;
+
+            // DOM 파싱을 통해 Meta 정보 추출
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            const title = doc.querySelector('meta[property="og:title"]')?.content?.split(' - ')[0]?.trim();
+            const author = doc.querySelector('meta[name="author"]')?.content || 
+                           doc.querySelector('meta[property="og:author"]')?.content || 
+                           "작가 미상";
+            const cover_url = doc.querySelector('meta[property="og:image"]')?.content;
+            
+            if (!title) return null;
+
+            return {
+                title: title,
+                author: author,
+                publisher: "알라딘 검색",
+                cover_url: cover_url,
+                isbn: isbn
+            };
+        } catch (e) {
+            console.warn("Aladin search failed:", e);
+            return null;
         }
     }
 
@@ -322,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         if (!error) {
             // 성공 피드백 (진동/소리 등 가능)
-            alert(`'${book.title}' 책을 등록했어요!`);
+            await window.customAlert(`'${book.title}' 책을 등록했어요!`, "등록 완료");
             document.querySelector('[data-target="tab-library"]').click();
         }
     }
@@ -344,16 +403,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="status-selector">
                     <p class="selector-label">교은아, 지금 이 책은 어떤 상태야?</p>
                     <div class="status-options">
-                        <button class="opt-btn ${book.status === 'reading' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'reading')">읽고 있어요</button>
-                        <button class="opt-btn ${book.status === 'finished' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'finished')">다 읽었어요! ✨</button>
+                        <button class="opt-btn ${book.status === 'reading' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'reading')">
+                            <i class="fas fa-book-reader"></i><br>읽고 있어요
+                        </button>
+                        <button class="opt-btn ${book.status === 'finished' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'finished')">
+                            <i class="fas fa-check-circle"></i><br>다 읽었어요!
+                        </button>
                     </div>
                 </div>
                 
-                <button class="delete-btn" onclick="deleteBook('${book.id}')">책 목록에서 지우기</button>
+                <button class="delete-btn" onclick="deleteBook('${book.id}')">
+                    <i class="fas fa-trash-alt"></i> 책 목록에서 지우기
+                </button>
             </div>
         `;
         
-        modal.classList.remove('hidden');
+        window.openModal(modal);
     };
 
     window.updateBookStatus = async (bookId, newStatus) => {
@@ -366,12 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
             .eq('id', bookId);
             
         if (!error) {
-            document.getElementById('book-modal').classList.add('hidden');
+            window.closeModal(document.getElementById('book-modal'));
             
             // 다 읽었을 때 아빠에게 알림 보내기
             if (newStatus === 'finished' && oldBook.status !== 'finished') {
                 sendCelebrationToDad(oldBook.title);
-                alert("우와! 교은이가 책을 한 권 더 읽었네요! 아빠한테 자랑했어요! 🥳💖");
+                await window.customAlert("우와! 교은이가 책을 한 권 더 읽었네요!\n아빠한테 자랑했어요! 🥳💖", "축하해요!");
             }
         }
     };
@@ -390,7 +455,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.deleteBook = async (bookId) => {
-        if (!confirm("정말 이 책을 지울까요?")) return;
+        const ok = await window.customConfirm("소중한 독서 기록을 정말 삭제할까요?");
+        if (!ok) return;
+        
         if (!_supabase) return;
         
         const { error } = await _supabase
@@ -399,12 +466,96 @@ document.addEventListener('DOMContentLoaded', () => {
             .eq('id', bookId);
             
         if (!error) {
-            document.getElementById('book-modal').classList.add('hidden');
+            window.closeModal(document.getElementById('book-modal'));
         }
     };
 
+    // 젬마 프리미엄 커스텀 컨펌 (Promise 기반)
+    window.customConfirm = function(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-msg');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+            if (msgEl) msgEl.innerText = message;
+            window.openModal(modal);
+
+            const handleOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                window.closeModal(modal);
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            // 모달 외부 클릭 시 닫기 (취소 처리)
+            modal.onclick = (e) => {
+                if (e.target === modal) handleCancel();
+            };
+        });
+    };
+
+    // 젬마 프리미엄 커스텀 알림 (Promise 기반)
+    window.customAlert = function(message, title = "알림") {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('alert-modal');
+            const titleEl = document.getElementById('alert-title');
+            const msgEl = document.getElementById('alert-msg');
+            const okBtn = document.getElementById('alert-ok-btn');
+            const iconContainer = document.getElementById('alert-icon-container');
+
+            if (titleEl) titleEl.innerText = title;
+            if (msgEl) msgEl.innerText = message;
+            
+            // 타이틀에 따른 아이콘 변경
+            if (title === "오류") {
+                iconContainer.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+                iconContainer.style.color = "#EF4444";
+                iconContainer.style.background = "rgba(239, 68, 68, 0.1)";
+            } else if (title === "축하해요!" || title === "등록 완료") {
+                iconContainer.innerHTML = '<i class="fas fa-gift"></i>';
+                iconContainer.style.color = "#F472B6";
+                iconContainer.style.background = "rgba(244, 114, 182, 0.1)";
+            } else {
+                iconContainer.innerHTML = '<i class="fas fa-info-circle"></i>';
+                iconContainer.style.color = "var(--primary-color)";
+                iconContainer.style.background = "rgba(167, 139, 250, 0.1)";
+            }
+
+            window.openModal(modal);
+
+            const handleOk = () => {
+                cleanup();
+                resolve();
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener('click', handleOk);
+                window.closeModal(modal);
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            
+            modal.onclick = (e) => {
+                if (e.target === modal) handleOk();
+            };
+        });
+    };
+
     document.querySelector('.close-modal').onclick = () => {
-        document.getElementById('book-modal').classList.add('hidden');
+        window.closeModal(document.getElementById('book-modal'));
     };
 
     // 11. 탭 전환 이벤트
@@ -482,11 +633,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 12. 직접 입력 로직
     manualInputBtn.addEventListener('click', () => {
-        manualModal.classList.remove('hidden');
+        window.openModal(manualModal);
     });
 
     closeManualBtn.addEventListener('click', () => {
-        manualModal.classList.add('hidden');
+        window.closeModal(manualModal);
     });
 
     saveManualBtn.addEventListener('click', async () => {
@@ -494,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const author = document.getElementById('manual-author').value.trim();
         
         if (!title) {
-            alert("책 이름을 알려주세요!");
+            await window.customAlert("책 이름을 알려주세요!", "입력 확인");
             return;
         }
         
@@ -510,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 입력 필드 초기화 및 모달 닫기
         document.getElementById('manual-title').value = '';
         document.getElementById('manual-author').value = '';
-        manualModal.classList.add('hidden');
+        window.closeModal(manualModal);
     });
 
     initApp();
