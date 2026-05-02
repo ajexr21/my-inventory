@@ -517,11 +517,16 @@ form.onsubmit = async (e) => {
     e.preventDefault();
     if (!_supabase) return;
 
-    const formData = {
-        type: form.querySelector('input[name="type"]:checked').value,
-        user_name: document.querySelector('#family-selector .chip.active').dataset.name,
-        date: new Date(`${document.getElementById('tr-date').value}T${document.getElementById('tr-time').value}`).toISOString(),
-        description: document.getElementById('tr-description').value,
+        const dateParts = document.getElementById('tr-date').value.split('-');
+        const timeParts = document.getElementById('tr-time').value.split(':');
+        // 연, 월(0-11), 일, 시, 분 순서로 로컬 날짜 객체 생성
+        const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
+
+        const formData = {
+            type: form.querySelector('input[name="type"]:checked').value,
+            user_name: document.querySelector('#family-selector .chip.active').dataset.name,
+            date: localDate.toISOString(),
+            description: document.getElementById('tr-description').value,
         amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
         category: document.getElementById('tr-category').value,
         method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
