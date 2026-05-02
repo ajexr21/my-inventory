@@ -120,7 +120,7 @@ window.renderDiaries = function() {
 };
 
 window.handleDiaryClick = function(id) {
-    const diary = diaries.find(d => d.id === id);
+    const diary = diaries.find(d => d.id == id);
     if (!diary) return;
     if (diary.is_public) { window.showDiaryDetail(diary); } 
     else { currentViewingId = id; window.openModal(authModal); }
@@ -155,7 +155,7 @@ window.saveDiary = async function() {
 
 window.checkPassword = function() {
     const input = document.getElementById('auth-password').value;
-    const diary = diaries.find(d => d.id === currentViewingId);
+    const diary = diaries.find(d => d.id == currentViewingId);
     if (diary && diary.password === input) {
         window.closeModal(authModal);
         document.getElementById('auth-password').value = '';
@@ -173,7 +173,7 @@ window.deleteDiary = async function() {
     const { error } = await _supabase.from('house_diaries').delete().eq('id', currentViewingId);
     if (!error) { 
         window.closeModal(viewModal); 
-        window.fetchDiaries(); 
+        await window.fetchDiaries(); 
     }
 };
 
