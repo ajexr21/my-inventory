@@ -480,30 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 saveData();
                 renderLottoList();
-            } else if (round === 1221) {
-                // 1221회차 API 지연 대비 백업 데이터 적용
-                winningNumbersCache[1221] = {
-                    numbers: [7, 12, 25, 28, 35, 41],
-                    bonus: 21,
-                    date: "2026-04-25"
-                };
-                saveData();
-                renderLottoList();
             } else {
                 console.log(`${round}회차 당첨 정보가 아직 없습니다.`);
             }
         } catch (error) {
             console.error("당첨 번호 조회 실패:", error);
-            // 에러 시에도 1221회차라면 백업 데이터 시도
-            if (round === 1221) {
-                winningNumbersCache[1221] = {
-                    numbers: [7, 12, 25, 28, 35, 41],
-                    bonus: 21,
-                    date: "2026-04-25"
-                };
-                saveData();
-                renderLottoList();
-            }
         }
     }
 
@@ -629,7 +610,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const day = today.getDay(); // 0(일)~6(토)
         const hours = today.getHours();
-        if (day < 6 || (day === 6 && hours < 21)) {
+        const minutes = today.getMinutes();
+        
+        // 토요일 20:40 이후부터 최신 회차로 간주
+        if (day < 6 || (day === 6 && (hours < 20 || (hours === 20 && minutes < 40)))) {
             round -= 1;
         }
         return round;
@@ -646,16 +630,8 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">시그로또(SigLotto) API 우회 수신 중...</p>';
 
         async function tryFetchSigLotto(round, attempt = 0) {
-            // 시그로또 서버 자체의 업데이트 지연(404) 대비 젬마 팀의 백업 데이터
-            const fallbackData = {
-                draw_no: 1221,
-                draw_date: "2026-04-25",
-                numbers: [7, 12, 25, 28, 35, 41],
-                bonus: 21
-            };
-
-            if (attempt > 1) { // 2회 이상 실패 시 백업 데이터로 강제 렌더링
-                renderFormattedNumbers(fallbackData, container, dateEl, roundTitleEl);
+            if (attempt > 2) { // 3회 시도 후 종료 (최신 -> 이전 -> 이전)
+                container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">당첨 정보를 가져올 수 없습니다.</p>';
                 return;
             }
 
