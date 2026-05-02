@@ -19,8 +19,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualRoundInput = document.getElementById('manual-round');
     const selectedCountEl = document.getElementById('selected-count');
     const selectedPreviewEl = document.getElementById('selected-balls-preview');
+    
+    // Winning Result UI Elements
+    const editWinBtn = document.getElementById('edit-win-btn');
+    const winModal = document.getElementById('win-modal');
+    const winModalCloseBtn = document.getElementById('win-modal-close-btn');
+    const winModalConfirmBtn = document.getElementById('win-modal-confirm-btn');
+    const winRoundInput = document.getElementById('win-round');
+    const winNumberGrid = document.getElementById('win-number-grid');
+    const winSelectedCountEl = document.getElementById('win-selected-count');
+    const winBallsPreviewEl = document.getElementById('win-balls-preview');
+    const bonusSelectionArea = document.getElementById('bonus-selection-area');
+    const bonusGrid = document.getElementById('bonus-grid');
+    const winStep1 = document.getElementById('win-step-1');
+    const winStep2 = document.getElementById('win-step-2');
+    const winNextBtn = document.getElementById('win-next-btn');
+    const winPrevBtn = document.getElementById('win-prev-btn');
 
     let selectedNumbers = [];
+    let selectedWinNumbers = [];
+    let selectedBonusNumber = null;
 
     // State
     let html5QrcodeScanner = null;
@@ -223,7 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
         numberGrid.innerHTML = '';
         for (let i = 1; i <= 45; i++) {
             const numBtn = document.createElement('div');
-            numBtn.className = 'grid-num';
+            const rangeClass = `range-${Math.ceil(i / 10)}`;
+            numBtn.className = `grid-num ${rangeClass}`;
             numBtn.textContent = i;
             numBtn.addEventListener('click', () => toggleNumber(i));
             numberGrid.appendChild(numBtn);
@@ -275,6 +294,229 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     manualRoundInput.addEventListener('input', updateModalUI);
+
+    // 당첨 번호 직접 입력 관련 로직
+    if (editWinBtn) {
+        editWinBtn.addEventListener('click', openWinModal);
+    }
+    if (winModalCloseBtn) {
+        winModalCloseBtn.addEventListener('click', closeWinModal);
+    }
+    if (winModalConfirmBtn) {
+        winModalConfirmBtn.addEventListener('click', saveManualWinResult);
+    }
+    if (winNextBtn) {
+        winNextBtn.addEventListener('click', () => goToWinStep(2));
+    }
+    if (winPrevBtn) {
+        winPrevBtn.addEventListener('click', () => goToWinStep(1));
+    }
+
+    function goToWinStep(step) {
+        if (step === 1) {
+            winStep1.classList.remove('hidden');
+            winStep2.classList.add('hidden');
+        } else {
+            winStep1.classList.add('hidden');
+            winStep2.classList.remove('hidden');
+            renderBonusGrid();
+        }
+        updateWinModalUI();
+    }
+
+    function openWinModal() {
+        openModal(winModal);
+        goToWinStep(1);
+        
+        // 현재 표시된 회차 또는 최신 계산 회차 자동 입력
+        const latestRoundMatch = document.getElementById('latest-round-title')?.textContent;
+        let currentRound;
+        if (latestRoundMatch && !isNaN(parseInt(latestRoundMatch.replace(/[^0-9]/g, '')))) {
+            currentRound = parseInt(latestRoundMatch.replace(/[^0-9]/g, ''));
+        } else {
+            currentRound = getLatestRound();
+        }
+        winRoundInput.value = currentRound;
+        
+        loadWinResultForRound(currentRound);
+    }
+
+    function loadWinResultForRound(round) {
+        if (winningNumbersCache[round]) {
+            selectedWinNumbers = [...winningNumbersCache[round].numbers];
+            selectedBonusNumber = winningNumbersCache[round].bonus;
+        } else {
+            selectedWinNumbers = [];
+            selectedBonusNumber = null;
+        }
+        
+        renderWinNumberGrid();
+        // 보너스 선택 단계라면 보너스 그리드도 재렌더링 (비활성 번호 갱신)
+        if (!winStep2.classList.contains('hidden')) {
+            renderBonusGrid();
+        }
+        updateWinModalUI();
+    }
+
+    winRoundInput.addEventListener('input', () => {
+        const round = parseInt(winRoundInput.value);
+        if (round) {
+            loadWinResultForRound(round);
+        }
+    });
+
+    function closeWinModal() {
+        closeModal(winModal);
+    }
+
+    function renderWinNumberGrid() {
+        winNumberGrid.innerHTML = '';
+        for (let i = 1; i <= 45; i++) {
+            const numBtn = document.createElement('div');
+            const rangeClass = `range-${Math.ceil(i / 10)}`;
+            numBtn.className = `grid-num ${rangeClass}`;
+            numBtn.textContent = i;
+            numBtn.addEventListener('click', () => toggleWinNumber(i));
+            winNumberGrid.appendChild(numBtn);
+        }
+    }
+
+    function toggleWinNumber(num) {
+        if (selectedWinNumbers.length < 6) {
+            const index = selectedWinNumbers.indexOf(num);
+            if (index > -1) {
+                selectedWinNumbers.splice(index, 1);
+            } else {
+                selectedWinNumbers.push(num);
+            }
+        } else {
+            // 6개 선택 완료 후 보너스 번호 선택
+            if (selectedWinNumbers.includes(num)) {
+                selectedWinNumbers.splice(selectedWinNumbers.indexOf(num), 1);
+                selectedBonusNumber = null;
+            } else {
+                selectedBonusNumber = num;
+            }
+        }
+        updateWinModalUI();
+    }
+
+    function renderBonusGrid() {
+        bonusGrid.innerHTML = '';
+        for (let i = 1; i <= 45; i++) {
+            const numBtn = document.createElement('div');
+            const rangeClass = `range-${Math.ceil(i / 10)}`;
+            numBtn.className = `grid-num ${rangeClass}`;
+            numBtn.textContent = i;
+            
+            if (selectedWinNumbers.includes(i)) {
+                // 당첨 번호로 이미 선택된 번호는 선택된 상태로 유지하되 X 표시
+                numBtn.classList.add('selected', `selected-${Math.ceil(i/10)}`, 'disabled');
+                numBtn.style.pointerEvents = 'none';
+            } else {
+                if (selectedBonusNumber === i) numBtn.classList.add('selected', `selected-${Math.ceil(i/10)}`);
+                numBtn.addEventListener('click', () => {
+                    selectedBonusNumber = i;
+                    updateWinModalUI();
+                });
+            }
+            bonusGrid.appendChild(numBtn);
+        }
+    }
+
+    function updateWinModalUI() {
+        const allNums = winNumberGrid.querySelectorAll('.grid-num');
+        allNums.forEach(btn => {
+            const num = parseInt(btn.textContent, 10);
+            btn.classList.remove('selected', 'selected-1', 'selected-2', 'selected-3', 'selected-4', 'selected-5');
+            if (selectedWinNumbers.includes(num)) {
+                btn.classList.add('selected');
+                btn.classList.add(`selected-${Math.ceil(num / 10)}`);
+            }
+        });
+
+        winSelectedCountEl.textContent = selectedWinNumbers.length;
+
+        // 보너스 번호 선택 상태 업데이트
+        const allBonusNums = bonusGrid.querySelectorAll('.grid-num');
+        allBonusNums.forEach(btn => {
+            const num = parseInt(btn.textContent, 10);
+            btn.classList.remove('selected', 'selected-1', 'selected-2', 'selected-3', 'selected-4', 'selected-5');
+            
+            // 보너스 번호로 선택되었거나, 이미 당첨 번호로 선택된 경우
+            if (selectedBonusNumber === num || selectedWinNumbers.includes(num)) {
+                btn.classList.add('selected');
+                btn.classList.add(`selected-${Math.ceil(num / 10)}`);
+            }
+        });
+        
+        // 버튼 활성화 로직
+        winNextBtn.disabled = (selectedWinNumbers.length !== 6);
+        winModalConfirmBtn.disabled = !(selectedWinNumbers.length === 6 && selectedBonusNumber && winRoundInput.value);
+        
+        // 미리보기 렌더링
+        winBallsPreviewEl.innerHTML = '';
+        selectedWinNumbers.sort((a, b) => a - b).forEach(num => {
+            const ball = document.createElement('div');
+            ball.className = `number-ball ball-${Math.ceil(num / 10)}`;
+            ball.textContent = num;
+            winBallsPreviewEl.appendChild(ball);
+        });
+        
+        if (selectedBonusNumber) {
+            const plus = document.createElement('div');
+            plus.style.display = 'flex';
+            plus.style.alignItems = 'center';
+            plus.textContent = '+';
+            winBallsPreviewEl.appendChild(plus);
+            
+            const ball = document.createElement('div');
+            ball.className = `number-ball ball-${Math.ceil(selectedBonusNumber / 10)}`;
+            ball.textContent = selectedBonusNumber;
+            winBallsPreviewEl.appendChild(ball);
+        }
+    }
+
+    async function saveManualWinResult() {
+        const round = parseInt(winRoundInput.value, 10);
+        if (!round || selectedWinNumbers.length !== 6 || !selectedBonusNumber) return;
+
+        winModalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+        winModalConfirmBtn.disabled = true;
+
+        const resultData = {
+            round: round,
+            numbers: selectedWinNumbers.sort((a, b) => a - b),
+            bonus: selectedBonusNumber,
+            draw_date: new Date().toISOString().split('T')[0] // 입력 날짜
+        };
+
+        try {
+            if (_supabase) {
+                await _supabase.from('lotto_results').upsert(resultData);
+            }
+            
+            // 로컬 캐시 업데이트
+            winningNumbersCache[round] = {
+                numbers: resultData.numbers,
+                bonus: resultData.bonus,
+                date: resultData.draw_date
+            };
+            saveData();
+            
+            setTimeout(() => {
+                closeWinModal();
+                winModalConfirmBtn.innerHTML = '저장하기';
+                updateLatestLottoResult();
+                renderLottoList();
+            }, 500);
+        } catch (e) {
+            console.error("당첨 번호 저장 실패:", e);
+            alert("저장에 실패했습니다.");
+            winModalConfirmBtn.disabled = false;
+            winModalConfirmBtn.innerHTML = '저장하기';
+        }
+    }
 
     function onScanSuccess(decodedText, decodedResult) {
         console.log("Scanned QR:", decodedText);
@@ -516,12 +758,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const matchCount = myNums.filter(n => winNums.includes(n)).length;
         const hasBonus = myNums.includes(bonusNum);
 
-        if (matchCount === 6) return { rank: 1, text: "1등", class: "status-win" };
-        if (matchCount === 5 && hasBonus) return { rank: 2, text: "2등", class: "status-win" };
-        if (matchCount === 5) return { rank: 3, text: "3등", class: "status-win" };
-        if (matchCount === 4) return { rank: 4, text: "4등", class: "status-win" };
-        if (matchCount === 3) return { rank: 5, text: "5등", class: "status-win" };
-        return { rank: 0, text: "낙첨", class: "status-lose" };
+        if (matchCount === 6) return { rank: 1, text: "1등", color: "#FFD700", class: "status-win" };
+        if (matchCount === 5 && hasBonus) return { rank: 2, text: "2등", color: "#FFD700", class: "status-win" };
+        if (matchCount === 5) return { rank: 3, text: "3등", color: "#FFD700", class: "status-win" };
+        if (matchCount === 4) return { rank: 4, text: "4등", color: "#FFD700", class: "status-win" };
+        if (matchCount === 3) return { rank: 5, text: "5등", color: "#FFD700", class: "status-win" };
+        return { rank: 0, text: "낙첨", color: "#999", class: "status-lose" };
     }
 
     function renderLottoList() {
@@ -586,7 +828,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 gameHtml += `</div>
-                    <div class="game-result ${resultObj ? resultObj.class : ''}">${resultObj ? resultObj.text : ''}</div>
+                    <div class="game-result ${resultObj ? resultObj.class : ''}">
+                        ${resultObj && resultObj.rank > 0 
+                            ? `<div class="rank-badge" style="color: ${resultObj.color};">
+                                <i class="fas fa-certificate badge-icon"></i>
+                                <span class="badge-num">${resultObj.text}</span>
+                               </div>` 
+                            : `<span style="color: ${resultObj ? resultObj.color : '#999'};">${resultObj ? resultObj.text : ''}</span>`}
+                    </div>
                 </div>`;
 
                 ticketHtml += gameHtml;
@@ -627,9 +876,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!roundTitleEl || !container) return;
 
-        container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">시그로또(SigLotto) API 우회 수신 중...</p>';
-
         async function tryFetchSigLotto(round, attempt = 0) {
+            // 1. 먼저 DB/캐시에 데이터가 있는지 확인 (사용자가 직접 입력했을 수 있음)
+            if (winningNumbersCache[round]) {
+                const cache = winningNumbersCache[round];
+                renderFormattedNumbers({
+                    draw_no: round,
+                    draw_date: cache.date,
+                    numbers: cache.numbers,
+                    bonus: cache.bonus
+                }, container, dateEl, roundTitleEl);
+                return;
+            }
+
             if (attempt > 2) { // 3회 시도 후 종료 (최신 -> 이전 -> 이전)
                 container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">당첨 정보를 가져올 수 없습니다.</p>';
                 return;

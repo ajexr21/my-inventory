@@ -31,7 +31,10 @@
         <!-- 탭 1: 내 로또 목록 (기본 화면) -->
         <section id="tab-list" class="tab-content active">
             <!-- 최신 당첨 번호 카드 추가 -->
-            <div id="latest-result-card" class="summary-card latest-card" style="text-align: center;">
+            <div id="latest-result-card" class="summary-card latest-card" style="text-align: center; position: relative;">
+                <button id="edit-win-btn" class="edit-win-btn" title="당첨 번호 직접 입력">
+                    <i class="fas fa-edit"></i>
+                </button>
                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">최근 추첨 결과</div>
                 <h2 style="font-size: 24px; color: #222; font-weight: 800; margin-bottom: 5px;">제<span id="latest-round-title"></span>회</h2>
                 <div id="latest-numbers-container" class="game-numbers latest-numbers">
@@ -140,6 +143,56 @@
             </div>
             <div class="modal-footer">
                 <button id="modal-confirm-btn" class="btn-primary" disabled>확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 당첨 번호 직접 입력 모달 (6+1) -->
+    <div id="win-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>당첨 번호 설정</h3>
+                <button id="win-modal-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="win-round">추첨 회차</label>
+                    <input type="number" id="win-round" placeholder="예: 1222">
+                </div>
+
+                <!-- Step 1: Main Numbers -->
+                <div id="win-step-1" class="win-step">
+                    <div class="selection-info">
+                        당첨 번호 <span id="win-selected-count">0</span>/6개 선택
+                    </div>
+                    
+                    <div id="win-number-grid" class="number-grid">
+                        <!-- 1~45 번호가 여기에 생성됨 -->
+                    </div>
+                    
+                    <button id="win-next-btn" class="btn-primary" disabled>다음 (보너스 번호 선택)</button>
+                </div>
+
+                <!-- Step 2: Bonus Number -->
+                <div id="win-step-2" class="win-step hidden">
+                    <div class="selection-info" style="text-align: center; margin-bottom: 20px;">
+                        <span style="color: var(--secondary-color); font-weight: 800;">보너스 번호</span>를 하나 선택하세요
+                    </div>
+                    
+                    <div id="bonus-grid" class="number-grid bonus-grid">
+                        <!-- 1~45 번호 중 당첨번호 제외하고 생성됨 -->
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button id="win-prev-btn" class="btn-secondary" style="margin-top: 0; flex: 1;">이전으로</button>
+                        <button id="win-modal-confirm-btn" class="btn-primary" style="flex: 2;" disabled>저장하기</button>
+                    </div>
+                </div>
+
+                <!-- Common: Preview (Always visible) -->
+                <div class="selected-balls-preview" id="win-balls-preview" style="margin-top: 20px; margin-bottom: 0;">
+                    <!-- 선택된 당첨 번호 공들이 여기에 미리보기됨 -->
+                </div>
             </div>
         </div>
     </div>
