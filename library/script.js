@@ -31,9 +31,52 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     };
 
-    // 로딩 처리
-    window.showLoading = () => window.openModal(document.getElementById('loading-modal'));
-    window.hideLoading = () => window.closeModal(document.getElementById('loading-modal'));
+    // 로딩 처리 (재미있는 문구 순환)
+    let loadingInterval = null;
+    const loadingMessages = [
+        "알라딘 지니가 요술 램프를 닦으며<br>책을 찾고 있어요! 🧞‍♂️",
+        "카카오 라이언이 도서관 사다리에<br>조심조심 올라갔어요! 🦁",
+        "알라딘 서점에서 가장 깨끗한<br>책 정보를 가져오는 중... 📖",
+        "잠시만요! 카카오 친구들이<br>책 제목을 받아 적고 있어요. ✍️",
+        "교은이의 멋진 서재에 넣을<br>준비를 하고 있어요! ✨",
+        "거의 다 됐어요! 책장의<br>먼지를 탈탈 털어내고 있어요. 🧹"
+    ];
+
+    window.showLoading = () => {
+        const msgEl = document.getElementById('loading-status-msg');
+        let idx = 0;
+        
+        if (msgEl) msgEl.innerHTML = loadingMessages[0];
+        
+        window.openModal(document.getElementById('loading-modal'));
+        
+        loadingInterval = setInterval(() => {
+            idx = (idx + 1) % loadingMessages.length;
+            if (msgEl) {
+                msgEl.style.opacity = 0;
+                setTimeout(() => {
+                    msgEl.innerHTML = loadingMessages[idx];
+                    msgEl.style.opacity = 1;
+                }, 300);
+            }
+        }, 2500);
+    };
+
+    window.hideLoading = () => {
+        if (loadingInterval) clearInterval(loadingInterval);
+        window.closeModal(document.getElementById('loading-modal'));
+    };
+
+    window.updateLoadingMsg = (msg) => {
+        const msgEl = document.getElementById('loading-status-msg');
+        if (msgEl) {
+            msgEl.style.opacity = 0;
+            setTimeout(() => {
+                msgEl.innerHTML = msg;
+                msgEl.style.opacity = 1;
+            }, 300);
+        }
+    };
 
     // 3. State
     let _supabase = null;
@@ -299,36 +342,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 9. 도서 검색 (알라딘 우선 -> 카카오 백업 전략)
+    // 9. 도서 검색 (카카오 우선 -> 알라딘 백업 전략)
     async function searchBookByISBN(isbn, isManual = false) {
         try {
             if (!_supabase) return;
             window.showLoading();
 
-            // 1. 알라딘 검색 시도 (최신/한정판 도서에 강함)
-            const aladinBook = await fetchFromAladin(isbn);
-            if (aladinBook) {
-                if (isManual) {
-                    // 직접 입력 모드일 때는 폼에 채워줌
-                    document.getElementById('manual-title').value = aladinBook.title;
-                    document.getElementById('manual-author').value = aladinBook.author;
-                    window.hideLoading();
-                    return aladinBook;
-                }
-                await addNewBook(aladinBook);
-                window.hideLoading();
-                return;
-            }
-
-            // 2. 알라딘 실패 시 카카오 검색 시도 (서버측 Edge Function 활용)
+            // 1. 카카오 검색 시도 (속도가 빠르고 표준적임)
             const { data, error } = await _supabase.functions.invoke('search-books', {
                 body: { isbn: isbn }
             });
 
-            window.hideLoading();
-            if (error) throw error;
-            
-            if (data && data.documents && data.documents.length > 0) {
+            if (!error && data && data.documents && data.documents.length > 0) {
                 const b = data.documents[0];
                 const bookData = {
                     title: b.title,
@@ -341,12 +366,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isManual) {
                     document.getElementById('manual-title').value = bookData.title;
                     document.getElementById('manual-author').value = bookData.author;
+                    window.hideLoading();
                     return bookData;
                 }
                 await addNewBook(bookData);
-            } else {
-                await window.customAlert(`알라딘과 카카오 모두에서 책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
+                window.hideLoading();
+                return;
             }
+
+            // 2. 카카오 실패 시 알라딘 검색 시도 (최신/한정판 도서 보완)
+            window.updateLoadingMsg("카카오 친구들이 못 찾았대요!<br>알라딘 지니를 깨우러 갑니다! 🧞‍♂️💨");
+            
+            console.log("카카오에서 정보를 찾지 못해 알라딘 검색을 시작합니다...");
+            const aladinBook = await fetchFromAladin(isbn);
+            
+            if (aladinBook) {
+                if (isManual) {
+                    document.getElementById('manual-title').value = aladinBook.title;
+                    document.getElementById('manual-author').value = aladinBook.author;
+                    window.hideLoading();
+                    return aladinBook;
+                }
+                await addNewBook(aladinBook);
+                window.hideLoading();
+                return;
+            }
+
+            // 둘 다 실패한 경우
+            window.hideLoading();
+            await window.customAlert(`카카오와 알라딘 모두에서 책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
+            
         } catch (error) {
             window.hideLoading();
             console.error("도서 검색 실패:", error);
