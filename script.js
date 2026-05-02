@@ -1,10 +1,11 @@
-const SUPABASE_URL = 'https://wkpehbncxtgjpyceoprf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_PQLTIyT7-cYnrVdT6zcD-w_hCc08EIt';
+// Supabase 설정 (config.js에서 전역 변수로 로드됨)
 let _supabase = null;
 
 let transactions = [];
 let editingId = null;
 let viewDate = new Date(); // 현재 보고 있는 달
+let currentPrevBalance = 0;
+let currentTotalSavings = 0;
 
 // --- 1. 테마 관리 ---
 const themeToggle = document.getElementById('theme-toggle');
@@ -35,20 +36,42 @@ initTheme();
 async function initApp() {
     initTheme();
     try {
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         
-        // 오늘 날짜 기본 설정
-        document.getElementById('tr-date').valueAsDate = new Date();
+        // 세션 체크 추가
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (!session) {
+            window.location.href = '../login.html';
+            return;
+        }
+
+        // 오늘 날짜 및 시간 기본 설정 (로컬 기준)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('tr-date').value = `${year}-${month}-${day}`;
+        
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('tr-time').value = `${hours}:${minutes}`;
         
         await loadTransactions();
         
-        // 실시간 구독
+        // 실시간 구독 (다른 기기에서 변경 시 즉시 반영)
         _supabase
             .channel('account-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'account_book' }, () => {
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'account_book' 
+            }, (payload) => {
+                console.log('실시간 변경 감지됨:', payload);
                 loadTransactions();
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('실시간 구독 상태:', status);
+            });
     } catch (e) {
         console.error('Init failed:', e);
     }
@@ -80,7 +103,7 @@ async function initApp() {
     // 수입/지출 타입 변경 시 카테고리 업데이트
     const typeRadios = document.querySelectorAll('input[name="type"]');
     typeRadios.forEach(radio => {
-        radio.onchange = () => updateCategories();
+        radio.onchange = () => updateCategoriesAndMethods();
     });
 
     // 금액 입력 시 쉼표 표시
@@ -107,6 +130,19 @@ async function initApp() {
     document.getElementById('prev-year').onclick = () => changePickerYear(-1);
     document.getElementById('next-year').onclick = () => changePickerYear(1);
     document.querySelector('.close-month-btn').onclick = () => document.getElementById('month-modal').classList.remove('active');
+}
+
+async function sendTelegramMessage(text) {
+    if (!_supabase) return;
+    try {
+        const { data, error } = await _supabase.functions.invoke('send-telegram', {
+            body: { text: text }
+        });
+        if (error) throw error;
+        console.log('텔레그램 알림 성공:', data);
+    } catch (e) {
+        console.error('텔레그램 알림 실패 (Edge Function):', e);
+    }
 }
 
 let pickerYear = new Date().getFullYear();
@@ -153,11 +189,20 @@ const CATEGORIES = {
     income: ['급여', '상여', '용돈', '예금이자', '금융수익', '기타']
 };
 
-function updateCategories(selectedCategory = null) {
+const METHODS = {
+    expense: ['신용카드', '체크카드', '지역화폐', '현금', '기타'],
+    income: ['현금', '수표', '지역화폐', '상품권', '기타']
+};
+
+function updateCategoriesAndMethods(selectedCategory = null, selectedMethod = null) {
     const type = document.querySelector('input[name="type"]:checked').value;
     const catSelect = document.getElementById('tr-category');
-    if (!catSelect) return;
+    const methodSelector = document.getElementById('method-selector');
+    const methodLabel = document.getElementById('method-label');
+    
+    if (!catSelect || !methodSelector) return;
 
+    // 카테고리 업데이트
     catSelect.innerHTML = '';
     const emojiMap = {
         '식비': '🍔', '교통': '🚗', '생활': '🏠', '쇼핑': '🛍️', '저축/예금': '🏦', '기타': '🎁',
@@ -171,6 +216,26 @@ function updateCategories(selectedCategory = null) {
         if (cat === selectedCategory) option.selected = true;
         catSelect.appendChild(option);
     });
+
+    // 방식 업데이트 (칩 스타일)
+    methodSelector.innerHTML = '';
+    methodLabel.innerText = type === 'income' ? '수입 방식' : '지출 방식';
+    
+    METHODS[type].forEach(method => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        // 수정 시에는 저장된 값, 새 등록 시에는 첫 번째 항목 기본 선택
+        if (method === selectedMethod || (!selectedMethod && method === METHODS[type][0])) {
+            chip.classList.add('active');
+        }
+        chip.dataset.method = method;
+        chip.innerText = method;
+        chip.onclick = () => {
+            methodSelector.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        };
+        methodSelector.appendChild(chip);
+    });
 }
 
 async function loadTransactions() {
@@ -179,8 +244,8 @@ async function loadTransactions() {
     // 현재 월 표시
     document.getElementById('current-month').innerText = `${viewDate.getFullYear()}년 ${viewDate.getMonth() + 1}월`;
     
-    // 이번 달 범위 계산
-    const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).toISOString();
+    // 이번 달 범위 계산 (로컬 시간 기준을 ISO UTC로 변환)
+    const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1, 0, 0, 0).toISOString();
     const endOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
     // 1. 이번 달 내역 조회
@@ -189,8 +254,7 @@ async function loadTransactions() {
         .select('*')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth)
-        .order('date', { ascending: false })
-        .order('id', { ascending: false });
+        .order('date', { ascending: false });
 
     // 2. 이월 금액 계산 (이번 달 시작 전까지의 모든 합계)
     const { data: prevData, error: prevError } = await _supabase
@@ -217,9 +281,12 @@ async function loadTransactions() {
         allSavingsData.forEach(d => {
             totalAccumulatedSavings += d.amount;
         });
+        
+        currentPrevBalance = prevBalance;
+        currentTotalSavings = totalAccumulatedSavings;
 
         renderTransactions();
-        updateSummary(prevBalance, totalAccumulatedSavings);
+        updateSummary(monthData, currentPrevBalance, currentTotalSavings);
     } else {
         console.error('Load error:', monthError || prevError || savingsError);
         document.getElementById('transaction-list').innerHTML = '<div class="loading">데이터를 불러올 수 없습니다.</div>';
@@ -255,12 +322,12 @@ function animateCount(elementId, start, end) {
     requestAnimationFrame(update);
 }
 
-function updateSummary(prevBalance = 0, totalAccumulatedSavings = 0) {
+function updateSummary(data, prevBalance = 0, totalAccumulatedSavings = 0, isSearch = false) {
     let income = 0;
     let monthSavings = 0;
     let consumption = 0;
     
-    transactions.forEach(t => {
+    data.forEach(t => {
         if (t.type === 'income') {
             income += t.amount;
         } else {
@@ -272,20 +339,38 @@ function updateSummary(prevBalance = 0, totalAccumulatedSavings = 0) {
         }
     });
 
-    // 최종 잔액 계산: (이월 + 수입) - (저축 + 소비)
-    const totalBalance = prevBalance + income - (monthSavings + consumption);
+    // 검색 중일 때는 이월 금액을 0으로 처리하거나 제외 (검색 결과의 순수 합계만 표시)
+    const effectivePrevBalance = isSearch ? 0 : prevBalance;
+    const totalBalance = effectivePrevBalance + income - (monthSavings + consumption);
+
+    // 라벨 업데이트
+    const labels = {
+        income: isSearch ? '검색 수입' : '이번 달 수입',
+        savings: isSearch ? '검색 저축' : '이번 달 저축',
+        expense: isSearch ? '검색 지출' : '이번 달 지출',
+        balance: isSearch ? '검색 결과 합계' : '최종 잔액 (통장 잔고)',
+        prev: isSearch ? '필터 적용됨' : '이월'
+    };
+
+    document.querySelectorAll('.main-stat .label')[0].innerText = labels.income;
+    document.querySelectorAll('.main-stat .label')[1].innerText = labels.savings;
+    document.querySelectorAll('.main-stat .label')[2].innerText = labels.expense;
+    document.querySelector('.summary-footer .label').innerText = labels.balance;
+    document.querySelector('.mini-stat').childNodes[0].textContent = labels.prev + ' ';
 
     // 애니메이션 실행
-    animateCount('prev-balance', prevValues.prev, prevBalance);
+    animateCount('prev-balance', prevValues.prev, effectivePrevBalance);
     animateCount('total-income', prevValues.income, income);
     animateCount('month-savings', prevValues.monthSavings, monthSavings);
     animateCount('total-expense', prevValues.expense, consumption);
     animateCount('total-balance', prevValues.total, totalBalance);
+    
+    // 누적 저축은 검색과 무관하게 유지하거나 필요 시 0 처리 (여기서는 유지)
     animateCount('total-accumulated-savings', prevValues.totalSavings, totalAccumulatedSavings);
 
     // 현재 값을 저장
     prevValues = {
-        prev: prevBalance,
+        prev: effectivePrevBalance,
         income: income,
         monthSavings: monthSavings,
         expense: consumption,
@@ -300,13 +385,39 @@ function renderTransactions() {
     
     const searchTerm = document.getElementById('tr-search')?.value.toLowerCase() || '';
     
-    // 검색 필터링 적용
+    // 고급 검색 로직 적용
     const filtered = transactions.filter(t => {
-        const desc = t.description.toLowerCase();
-        const user = (t.user_name || '').toLowerCase();
-        const cat = (t.category || '').toLowerCase();
-        return desc.includes(searchTerm) || user.includes(searchTerm) || cat.includes(searchTerm);
+        if (!searchTerm) return true;
+        
+        // 검색 대상 텍스트 통합 (설명, 사용자, 카테고리, 타입)
+        const typeKo = t.type === 'income' ? '수입' : '지출';
+        const targetText = `${t.description} ${t.user_name || ''} ${t.category || ''} ${typeKo}`.toLowerCase();
+        
+        // OR(|) 단위로 먼저 분리
+        const orGroups = searchTerm.split('|').filter(g => g.trim());
+        
+        return orGroups.some(group => {
+            // AND(&) 단위로 분리
+            const andTerms = group.split('&').filter(t => t.trim());
+            
+            return andTerms.every(term => {
+                const trimmedTerm = term.trim();
+                if (trimmedTerm.startsWith('!')) {
+                    const excludeTerm = trimmedTerm.substring(1).trim();
+                    return excludeTerm ? !targetText.includes(excludeTerm) : true;
+                }
+                return targetText.includes(trimmedTerm);
+            });
+        });
     });
+
+    // 검색 결과에 따른 요약 업데이트
+    if (searchTerm) {
+        updateSummary(filtered, 0, currentTotalSavings, true);
+    } else {
+        // 검색어가 없으면 다시 이번 달 전체 요약으로 복구
+        updateSummary(transactions, currentPrevBalance, currentTotalSavings, false);
+    }
 
     if (filtered.length === 0) {
         list.innerHTML = transactions.length === 0 
@@ -321,16 +432,17 @@ function renderTransactions() {
         item.className = 'transaction-item';
         item.onclick = () => openEditModal(t);
         
-        const dateObj = new Date(t.created_at || t.date);
+        const dateObj = new Date(t.date);
         const date = dateObj.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
         const time = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const fullDateDisplay = `${date} <small style="opacity:0.8;">${time}</small>`;
+        const methodDisplay = t.method ? ` • <span style="color:var(--text-sub);">${t.method}</span>` : '';
+        const fullDateDisplay = `${date} <small style="opacity:0.8;">${time}</small>${methodDisplay} • ${t.category}`;
         const userName = t.user_name ? `<small style="color:var(--primary); font-weight:bold;">${t.user_name}</small> ` : '';
         
         item.innerHTML = `
             <div class="tr-info">
                 <h3>${userName}${t.description}</h3>
-                <p>${fullDateDisplay} • ${t.category}</p>
+                <p>${fullDateDisplay}</p>
             </div>
             <div class="tr-amount ${t.type === 'income' ? 'plus' : 'minus'}">
                 ${t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}원
@@ -349,8 +461,19 @@ document.getElementById('open-modal-btn').onclick = () => {
     document.getElementById('modal-title').innerText = '새 내역 추가';
     form.reset();
     document.getElementById('type-expense').checked = true;
-    updateCategories(); // 카테고리 초기화
-    document.getElementById('tr-date').valueAsDate = new Date();
+    updateCategoriesAndMethods(); // 카테고리 및 방식 초기화
+    
+    // 날짜 및 시간 초기화 (현재 로컬 시간 기준)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    document.getElementById('tr-date').value = `${year}-${month}-${day}`;
+    
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('tr-time').value = `${hours}:${minutes}`;
+    
     document.getElementById('delete-btn').style.display = 'none';
     modal.classList.add('active');
 };
@@ -362,14 +485,28 @@ window.openEditModal = (t) => {
     document.getElementById('modal-title').innerText = '내역 수정';
     document.getElementById(t.type === 'income' ? 'type-income' : 'type-expense').checked = true;
     
-    updateCategories(t.category); // 카테고리 업데이트 및 선택
+    updateCategoriesAndMethods(t.category, t.method); // 카테고리 및 방식 업데이트 및 선택
 
     // 가족 칩 선택 복구
     document.querySelectorAll('.chip').forEach(c => {
         c.classList.toggle('active', c.dataset.name === t.user_name);
     });
 
-    document.getElementById('tr-date').value = t.date;
+    const dateObj = new Date(t.date);
+    
+    // 로컬 시간 기준 날짜 추출
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const datePart = `${year}-${month}-${day}`;
+    
+    // 로컬 시간 기준 시:분 추출
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    const timePart = `${hours}:${minutes}`;
+
+    document.getElementById('tr-date').value = datePart;
+    document.getElementById('tr-time').value = timePart;
     document.getElementById('tr-description').value = t.description;
     document.getElementById('tr-amount').value = t.amount.toLocaleString();
     modal.classList.add('active');
@@ -382,11 +519,12 @@ form.onsubmit = async (e) => {
 
     const formData = {
         type: form.querySelector('input[name="type"]:checked').value,
-        user_name: document.querySelector('.chip.active').dataset.name,
-        date: document.getElementById('tr-date').value,
+        user_name: document.querySelector('#family-selector .chip.active').dataset.name,
+        date: new Date(`${document.getElementById('tr-date').value}T${document.getElementById('tr-time').value}`).toISOString(),
         description: document.getElementById('tr-description').value,
         amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
-        category: document.getElementById('tr-category').value
+        category: document.getElementById('tr-category').value,
+        method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
     };
 
     let error;
@@ -401,8 +539,20 @@ form.onsubmit = async (e) => {
     if (!error) {
         modal.classList.remove('active');
         loadTransactions();
+        
+        // 텔레그램 알림 발송
+        const typeLabel = formData.type === 'income' ? '💰 수입' : '💸 지출';
+        const msg = `<b>[가계부 알림]</b>\n` +
+                    `대상: ${formData.user_name}\n` +
+                    `구분: ${typeLabel}\n` +
+                    `방법: ${formData.method}\n` +
+                    `내용: ${formData.description}\n` +
+                    `금액: ${formData.amount.toLocaleString()}원\n` +
+                    `카테고리: ${formData.category}`;
+        sendTelegramMessage(msg);
     } else {
-        alert('저장에 실패했습니다.');
+        console.error('저장 에러 상세:', error);
+        alert('저장에 실패했습니다: ' + error.message);
     }
 };
 
@@ -417,8 +567,22 @@ document.getElementById('confirm-cancel').onclick = () => confirmModal.classList
 document.getElementById('confirm-ok').onclick = async () => {
     if (!editingId || !_supabase) return;
     
+    // 삭제할 데이터 정보 미리 가져오기
+    const target = transactions.find(t => t.id === editingId);
+    
     const { error } = await _supabase.from('account_book').delete().eq('id', editingId);
     if (!error) {
+        // 텔레그램 알림 발송
+        if (target) {
+            const msg = `<b>🗑️ [가계부 내역 삭제]</b>\n` +
+                        `대상: ${target.user_name}\n` +
+                        `내용: ${target.description}\n` +
+                        `금액: ${target.amount.toLocaleString()}원\n` +
+                        `카테고리: ${target.category}\n` +
+                        `<i>데이터가 영구 삭제되었습니다.</i>`;
+            sendTelegramMessage(msg);
+        }
+        
         confirmModal.classList.remove('active');
         modal.classList.remove('active');
         loadTransactions();
