@@ -522,6 +522,10 @@ main {
     color: var(--text);
     font-size: 15px;
     outline: none;
+    -webkit-appearance: none; /* 아이폰 기본 스타일 제거 */
+    appearance: none;
+    min-width: 0; /* 그리드 내에서 튀어나감 방지 */
+    height: 48px; /* 높이 통일 */
 }
 
 .form-group input:focus,
