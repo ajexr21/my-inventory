@@ -238,6 +238,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         ).then(() => {
             stopScanBtn.classList.remove('hidden');
+            
+            // [집중 수정] 포커스 킥(Focus Kick) 로직 추가
+            // 카메라 시작 직후 초점이 안 맞는 현상을 해결하기 위해 
+            // 0.5초 후 강제로 포커스 설정을 다시 적용하여 렌즈를 깨웁니다.
+            setTimeout(async () => {
+                try {
+                    const track = html5QrcodeScanner.getRunningTrack();
+                    if (track && track.applyConstraints) {
+                        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                        
+                        // 기기가 지원하는 경우에만 실행
+                        if (capabilities.focusMode) {
+                            await track.applyConstraints({
+                                advanced: [{ focusMode: "continuous" }]
+                            });
+                            console.log("Focus kick applied successfully");
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Focus kick failed, but scanner is still running:", e);
+                }
+            }, 500);
+
         }).catch(err => {
             console.error("Scanner error:", err);
             // 오류 시 기본 설정으로 재시도

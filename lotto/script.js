@@ -172,6 +172,26 @@ document.addEventListener('DOMContentLoaded', () => {
             onScanFailure
         ).then(() => {
             stopScanBtn.classList.remove('hidden');
+
+            // [집중 수정] 포커스 킥(Focus Kick) 로직 추가
+            // 카메라 시작 직후 초점이 멍하니 있는 현상을 방지하기 위해
+            // 0.5초 후 강제로 포커스 설정을 리프레시하여 렌즈를 깨웁니다.
+            setTimeout(async () => {
+                try {
+                    const track = html5QrcodeScanner.getRunningTrack();
+                    if (track && track.applyConstraints) {
+                        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                        if (capabilities.focusMode) {
+                            await track.applyConstraints({
+                                advanced: [{ focusMode: "continuous" }]
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Focus kick failed:", e);
+                }
+            }, 500);
+
         }).catch(err => {
             console.error("Scanner error:", err);
             qrReaderDiv.innerHTML = '<p style="padding: 20px;">카메라를 시작할 수 없습니다. 권한 설정을 확인해주세요.</p>';
