@@ -95,7 +95,7 @@ window.renderDiaries = function() {
     html += filtered.map(diary => {
         const date = new Date(diary.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
         return `
-            <div class="diary-card" onclick="window.handleDiaryClick('${diary.id}')">
+            <div class="diary-card" onclick="window.handleDiaryClick(event, '${diary.id}')">
                 <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <span style="background:var(--c-${window.getAuthorKey(diary.author)}); padding:4px 12px; border-radius:10px; font-size:0.75rem; font-weight:800; color:white;">
                         ${diary.author}
@@ -119,8 +119,9 @@ window.renderDiaries = function() {
     diaryList.innerHTML = html;
 };
 
-window.handleDiaryClick = function(id) {
-    const diary = diaries.find(d => d.id == id);
+window.handleDiaryClick = function(event, id) {
+    if (event) event.stopPropagation();
+    const diary = diaries.find(d => String(d.id) === String(id));
     if (!diary) return;
     if (diary.is_public) { window.showDiaryDetail(diary); } 
     else { currentViewingId = id; window.openModal(authModal); }
@@ -155,7 +156,7 @@ window.saveDiary = async function() {
 
 window.checkPassword = function() {
     const input = document.getElementById('auth-password').value;
-    const diary = diaries.find(d => d.id == currentViewingId);
+    const diary = diaries.find(d => String(d.id) === String(currentViewingId));
     if (diary && diary.password === input) {
         window.closeModal(authModal);
         document.getElementById('auth-password').value = '';
