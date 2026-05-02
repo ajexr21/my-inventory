@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 카메라 설정 최적화 (초점 문제 해결을 위해 강제 매크로 제거 및 영역 확대)
         const config = { 
             fps: 20, 
-            qrbox: { width: 280, height: 280 }, // 인식 영역 확대
+            qrbox: { width: 220, height: 220 }, // 창 크기에 맞춰 콤팩트하게 조정
             aspectRatio: 1.0,
             videoConstraints: {
                 facingMode: "environment",

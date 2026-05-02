@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const config = { 
             fps: 20, 
-            qrbox: { width: 300, height: 180 }, // 영역을 키워 더 멀리서도 찍을 수 있게 함
+            qrbox: { width: 220, height: 140 }, // 창 크기에 맞춰 콤팩트하게 조정
             aspectRatio: 1.0,
             videoConstraints: {
                 facingMode: "environment",
@@ -369,8 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.hideLoading();
                     return bookData;
                 }
-                await addNewBook(bookData);
                 window.hideLoading();
+                await addNewBook(bookData);
                 return;
             }
 
@@ -387,8 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.hideLoading();
                     return aladinBook;
                 }
-                await addNewBook(aladinBook);
                 window.hideLoading();
+                await addNewBook(aladinBook);
                 return;
             }
 
