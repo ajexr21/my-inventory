@@ -700,13 +700,13 @@ body {
     margin-bottom: 25px;
 }
 
-.status-selector {
+.status-selector, .bookmark-section {
     width: 100%;
     background: rgba(255, 255, 255, 0.03);
     padding: 20px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .selector-label {
@@ -740,6 +740,64 @@ body {
     box-shadow: 0 8px 16px rgba(167, 139, 250, 0.3);
 }
 
+/* 북마크(책갈피) 스타일 */
+.bookmark-input-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.bookmark-input-group input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 15px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    text-align: center;
+}
+
+.bookmark-input-group input:focus {
+    border-color: var(--primary-color);
+}
+
+.save-bookmark-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.save-bookmark-btn:active {
+    transform: scale(0.9);
+}
+
+/* 카드 배지 */
+.page-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: var(--secondary-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 5;
+    font-family: 'Outfit', sans-serif;
+}
+
 .delete-btn {
     width: 100%;
     padding: 15px;
@@ -758,12 +816,12 @@ body {
     background: rgba(239, 68, 68, 0.1);
 }
 
-[data-theme="light"] .status-selector {
+[data-theme="light"] .status-selector, [data-theme="light"] .bookmark-section {
     background: rgba(0, 0, 0, 0.02);
     border-color: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="light"] .opt-btn {
+[data-theme="light"] .opt-btn, [data-theme="light"] .bookmark-input-group input {
     background: white;
     border-color: rgba(0, 0, 0, 0.05);
     color: var(--text-main);

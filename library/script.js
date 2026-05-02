@@ -149,11 +149,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         bookListContainer.innerHTML = filteredBooks.map(book => `
-            <div class="book-card" onclick="openBookDetail('${book.id}')">
+            <div class="book-card" onclick="openBookDetail('${book.id}')" style="position: relative;">
                 <img src="${book.cover_url || 'https://via.placeholder.com/150x200?text=No+Cover'}" class="book-cover" alt="${book.title}">
                 <div class="status-badge">
                     ${getStatusText(book.status)}
                 </div>
+                ${book.status === 'reading' && book.current_page ? `
+                    <div class="page-badge">
+                        <i class="fas fa-bookmark" style="margin-right: 4px;"></i>p.${book.current_page}
+                    </div>
+                ` : ''}
                 <div class="book-info">
                     <h3 class="book-title">${book.title}</h3>
                     <p class="book-author">${book.author || '작가 미상'}</p>
@@ -480,6 +485,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </div>
                 </div>
+
+                ${book.status === 'reading' ? `
+                <div class="bookmark-section">
+                    <p class="selector-label">지금 몇 페이지까지 읽었어?</p>
+                    <div class="bookmark-input-group">
+                        <input type="number" id="current-page-input" placeholder="페이지 번호" value="${book.current_page || ''}" inputmode="numeric">
+                        <button class="save-bookmark-btn" onclick="updateBookmark('${book.id}')">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
                 
                 <button class="delete-btn" onclick="deleteBook('${book.id}')">
                     <i class="fas fa-trash-alt"></i> 책 목록에서 지우기
@@ -494,19 +511,69 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!_supabase) return;
         
         const oldBook = books.find(b => b.id === bookId);
+        
+        // 상태 변경 시 업데이트 데이터 구성
+        const updateData = { status: newStatus };
+        
+        // '다 읽었어요' 상태로 변경될 때 페이지 정보는 더 이상 표시하지 않음 (필요시 0으로 초기화 가능)
+        // 여기서는 그냥 두고 렌더링 시 status === 'reading' 일 때만 보여주는 방식으로 처리함
+        
         const { error } = await _supabase
             .from('library_books')
-            .update({ status: newStatus })
+            .update(updateData)
             .eq('id', bookId);
             
         if (!error) {
-            window.closeModal(document.getElementById('book-modal'));
-            
             // 다 읽었을 때 아빠에게 알림 보내기
             if (newStatus === 'finished' && oldBook.status !== 'finished') {
+                window.closeModal(document.getElementById('book-modal'));
                 sendCelebrationToDad(oldBook.title);
                 await window.customAlert("우와! 교은이가 책을 한 권 더 읽었네요!\n아빠한테 자랑했어요! 🥳💖", "축하해요!");
+            } else {
+                // 상태만 변경된 경우 다시 상세 모달을 열어 북마크 섹션이 보이게 함 (reading 상태로 바뀐 경우)
+                if (newStatus === 'reading') {
+                    // 약간의 지연 후 다시 렌더링된 데이터로 모달 갱신
+                    await fetchBooks();
+                    openBookDetail(bookId);
+                } else {
+                    window.closeModal(document.getElementById('book-modal'));
+                }
             }
+        }
+    };
+
+    window.updateBookmark = async (bookId) => {
+        if (!_supabase) return;
+        
+        const pageInput = document.getElementById('current-page-input');
+        const page = parseInt(pageInput.value);
+        
+        if (isNaN(page) || page < 0) {
+            await window.customAlert("페이지 번호를 숫자로 입력해 주세요!", "입력 확인");
+            return;
+        }
+
+        const { error } = await _supabase
+            .from('library_books')
+            .update({ current_page: page })
+            .eq('id', bookId);
+
+        if (!error) {
+            // 저장 버튼 시각적 피드백
+            const saveBtn = document.querySelector('.save-bookmark-btn');
+            const originalIcon = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+            saveBtn.style.background = '#10B981'; // 성공 시 초록색
+            
+            setTimeout(async () => {
+                saveBtn.innerHTML = originalIcon;
+                saveBtn.style.background = '';
+                // 데이터 새로고침
+                await fetchBooks();
+            }, 1000);
+        } else {
+            console.error("북마크 저장 실패:", error);
+            await window.customAlert("페이지를 저장하지 못했어요. 컬럼이 있는지 확인이 필요해요.", "오류");
         }
     };
 
