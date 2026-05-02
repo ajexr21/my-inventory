@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>우리집 일기장</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=1.2.5">
+    <link rel="stylesheet" href="style.css?v=1.2.6">
 </head>
+
 <body>
     <div class="app-container">
         <header class="app-header">
@@ -27,7 +31,8 @@
 
         <main class="app-main">
             <div class="search-bar" id="search-bar" style="display:none; margin-bottom: 20px;">
-                <input type="text" id="diary-search" placeholder="일기 내용을 검색해보세요..." style="width:100%; padding:14px 20px; border-radius:18px; border:none; background:var(--card); color:var(--text); font-size:0.95rem; outline:none; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                <input type="text" id="diary-search" placeholder="일기 내용을 검색해보세요..."
+                    style="width:100%; padding:14px 20px; border-radius:18px; border:none; background:var(--card); color:var(--text); font-size:0.95rem; outline:none; border: 1px solid var(--border); box-shadow: var(--shadow);">
             </div>
             <section class="summary-card">
                 <div class="intro-content">
@@ -53,11 +58,12 @@
         <div id="write-modal" class="modal hidden">
             <div class="modal-content">
                 <header class="modal-header">
-                    <button id="cancel-write-btn" class="close-modal text-btn" onclick="closeModal(document.getElementById('write-modal'))">취소</button>
+                    <button id="cancel-write-btn" class="close-modal text-btn"
+                        onclick="closeModal(document.getElementById('write-modal'))">취소</button>
                     <span class="modal-title">일기 쓰기</span>
                     <button id="save-diary-btn" class="save-btn">등록</button>
                 </header>
-                
+
                 <div class="write-form">
                     <div class="input-group">
                         <label>작성자</label>
@@ -95,13 +101,18 @@
         <div id="view-modal" class="modal hidden">
             <div class="modal-content">
                 <header class="modal-header">
-                    <button class="close-view text-btn" onclick="closeModal(document.getElementById('view-modal'))">닫기</button>
-                    <span id="view-author-badge" style="padding:4px 12px; border-radius:10px; font-size:0.85rem; font-weight:800; color:white;"></span>
-                    <button id="delete-diary-btn" style="background:none; border:none; color:#EF4444; font-size:1.1rem; padding:10px; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                    <button class="close-view text-btn"
+                        onclick="closeModal(document.getElementById('view-modal'))">닫기</button>
+                    <span id="view-author-badge"
+                        style="padding:4px 12px; border-radius:10px; font-size:0.85rem; font-weight:800; color:white;"></span>
+                    <button id="delete-diary-btn"
+                        style="background:none; border:none; color:#EF4444; font-size:1.1rem; padding:10px; cursor:pointer;"><i
+                            class="fas fa-trash-alt"></i></button>
                 </header>
                 <div class="write-form" style="padding-top:30px;">
                     <div id="view-date" style="font-size:0.9rem; opacity:0.5; margin-bottom:10px;"></div>
-                    <div id="view-body" style="font-size:1.1rem; line-height:1.7; white-space:pre-wrap; opacity:0.9;"></div>
+                    <div id="view-body" style="font-size:1.1rem; line-height:1.7; white-space:pre-wrap; opacity:0.9;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -132,6 +143,7 @@
         </div>
     </div>
     <script src="../config.js"></script>
-    <script src="script.js?v=1.2.5"></script>
+    <script src="script.js?v=1.2.6"></script>
 </body>
+
 </html>

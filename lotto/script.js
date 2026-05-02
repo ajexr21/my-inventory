@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openManualModal() {
-        manualModal.classList.remove('hidden');
+        openModal(manualModal);
         
         // 최신 회차 자동 입력 (데이터가 있으면 그 회차, 없으면 기본값)
         const latestRoundMatch = document.getElementById('latest-round-title')?.textContent;
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeManualModal() {
-        manualModal.classList.add('hidden');
+        closeModal(manualModal);
     }
 
     function renderNumberGrid() {
@@ -389,7 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function deleteTicket(id) {
-        if(confirm("이 로또 내역을 삭제하시겠습니까?")) {
+        const ok = await customConfirm("이 로또 내역을 삭제하시겠습니까?");
+        if(ok) {
             lottoData = lottoData.filter(t => t.id !== id);
             
             // DB 삭제
@@ -854,6 +855,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         }
+    }
+
+    // 모달 공통 로직
+    function openModal(modal) {
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.classList.add('no-scroll');
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
+    }
+
+    function customConfirm(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-message');
+            const okBtn = document.getElementById('confirm-ok');
+            const cancelBtn = document.getElementById('confirm-cancel');
+
+            if (!modal || !msgEl || !okBtn || !cancelBtn) {
+                resolve(confirm(message));
+                return;
+            }
+
+            msgEl.innerText = message;
+            openModal(modal);
+
+            const onOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const onCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                closeModal(modal);
+            };
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            
+            // 배경 클릭 시 취소 처리
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) onCancel();
+            }, { once: true });
+        });
     }
 
     // 초기 로드 시퀀스 최적화

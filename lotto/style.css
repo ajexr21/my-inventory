@@ -45,6 +45,11 @@ body {
     overflow-x: hidden;
 }
 
+body.no-scroll {
+    overflow: hidden;
+    height: 100vh;
+}
+
 .app-header {
     padding: calc(20px + env(safe-area-inset-top)) 20px 10px;
     background: var(--bg-color);
@@ -701,6 +706,37 @@ body {
 
 [data-theme="dark"] .modal-overlay {
     background: rgba(0, 0, 0, 0.8);
+}
+
+/* Confirm Modal Specifics */
+.confirm-content {
+    text-align: center;
+    padding: 35px 24px 30px;
+}
+
+.confirm-icon {
+    font-size: 50px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.confirm-btns .btn-primary {
+    background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+}
+
+.confirm-btns .btn-secondary {
+    background: var(--bg-color);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
 }
 
 
