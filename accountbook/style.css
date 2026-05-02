@@ -34,6 +34,11 @@ body {
     transition: background 0.4s, color 0.4s;
 }
 
+body.no-scroll {
+    overflow: hidden;
+    height: 100vh;
+}
+
 .container {
     max-width: 800px;
     margin: 0 auto;
@@ -507,7 +512,8 @@ main {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-row input {
     width: 100%;
     padding: 12px;
     border-radius: 10px;
@@ -515,6 +521,12 @@ main {
     background: var(--bg);
     color: var(--text);
     font-size: 15px;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-row input:focus {
+    border-color: var(--primary);
 }
 
 .form-row {

@@ -45,8 +45,16 @@ async function initApp() {
             return;
         }
 
-        // 오늘 날짜 기본 설정
-        document.getElementById('tr-date').valueAsDate = new Date();
+        // 오늘 날짜 및 시간 기본 설정 (로컬 기준)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('tr-date').value = `${year}-${month}-${day}`;
+        
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('tr-time').value = `${hours}:${minutes}`;
         
         await loadTransactions();
         
@@ -236,9 +244,12 @@ async function loadTransactions() {
     // 현재 월 표시
     document.getElementById('current-month').innerText = `${viewDate.getFullYear()}년 ${viewDate.getMonth() + 1}월`;
     
-    // 이번 달 범위 계산
-    const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).toISOString();
-    const endOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
+    // 이번 달 범위 계산 (시간대 변환 없이 로컬 문자열 기준)
+    const year = viewDate.getFullYear();
+    const month = String(viewDate.getMonth() + 1).padStart(2, '0');
+    const startOfMonth = `${year}-${month}-01T00:00:00`;
+    const lastDay = new Date(year, viewDate.getMonth() + 1, 0).getDate();
+    const endOfMonth = `${year}-${month}-${lastDay}T23:59:59`;
 
     // 1. 이번 달 내역 조회
     const { data: monthData, error: monthError } = await _supabase
@@ -246,7 +257,8 @@ async function loadTransactions() {
         .select('*')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('id', { ascending: false });
 
     // 2. 이월 금액 계산 (이번 달 시작 전까지의 모든 합계)
     const { data: prevData, error: prevError } = await _supabase
@@ -455,17 +467,26 @@ document.getElementById('open-modal-btn').onclick = () => {
     document.getElementById('type-expense').checked = true;
     updateCategoriesAndMethods(); // 카테고리 및 방식 초기화
     
+    // 날짜 및 시간 초기화 (현재 로컬 시간 기준)
     const now = new Date();
-    document.getElementById('tr-date').valueAsDate = now;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    document.getElementById('tr-date').value = `${year}-${month}-${day}`;
+    
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     document.getElementById('tr-time').value = `${hours}:${minutes}`;
     
     document.getElementById('delete-btn').style.display = 'none';
     modal.classList.add('active');
+    document.body.classList.add('no-scroll');
 };
 
-document.querySelector('.close-btn').onclick = () => modal.classList.remove('active');
+document.querySelector('.close-btn').onclick = () => {
+    modal.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+};
 
 window.openEditModal = (t) => {
     editingId = t.id;
@@ -479,15 +500,17 @@ window.openEditModal = (t) => {
         c.classList.toggle('active', c.dataset.name === t.user_name);
     });
 
-    const dateObj = new Date(t.date);
-    const datePart = dateObj.toISOString().split('T')[0];
-    const timePart = dateObj.toTimeString().split(' ')[0].substring(0, 5);
+    // DB에 저장된 로컬 시간 문자열을 처리
+    const dateStr = t.date.replace(' ', 'T'); // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+    const [datePart, timePartFull] = dateStr.split('T');
+    const timePart = timePartFull.substring(0, 5); // "HH:mm"
 
     document.getElementById('tr-date').value = datePart;
     document.getElementById('tr-time').value = timePart;
     document.getElementById('tr-description').value = t.description;
     document.getElementById('tr-amount').value = t.amount.toLocaleString();
     modal.classList.add('active');
+    document.body.classList.add('no-scroll');
     document.getElementById('delete-btn').style.display = 'block';
 };
 
@@ -495,15 +518,18 @@ form.onsubmit = async (e) => {
     e.preventDefault();
     if (!_supabase) return;
 
-    const formData = {
-        type: form.querySelector('input[name="type"]:checked').value,
-        user_name: document.querySelector('#family-selector .chip.active').dataset.name,
-        date: `${document.getElementById('tr-date').value}T${document.getElementById('tr-time').value}:00`,
-        description: document.getElementById('tr-description').value,
-        amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
-        category: document.getElementById('tr-category').value,
-        method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
-    };
+        const dateVal = document.getElementById('tr-date').value;
+        const timeVal = document.getElementById('tr-time').value;
+
+        const formData = {
+            type: form.querySelector('input[name="type"]:checked').value,
+            user_name: document.querySelector('#family-selector .chip.active').dataset.name,
+            date: `${dateVal}T${timeVal}:00`, // 변환 없이 로컬 문자열 그대로 저장
+            description: document.getElementById('tr-description').value,
+            amount: parseInt(document.getElementById('tr-amount').value.replace(/[^0-9]/g, '')),
+            category: document.getElementById('tr-category').value,
+            method: document.querySelector('#method-selector .chip.active')?.dataset.method || '기타'
+        };
 
     let error;
     if (editingId) {
@@ -516,7 +542,10 @@ form.onsubmit = async (e) => {
 
     if (!error) {
         modal.classList.remove('active');
-        loadTransactions();
+        document.body.classList.remove('no-scroll');
+        await loadTransactions();
+        // 최신 내역이 있는 최상단으로 스크롤
+        window.scrollTo({ top: 0, behavior: 'instant' });
         
         // 텔레그램 알림 발송
         const typeLabel = formData.type === 'income' ? '💰 수입' : '💸 지출';
@@ -571,7 +600,10 @@ document.getElementById('confirm-ok').onclick = async () => {
 
 // 외부 클릭 시 모달 닫기
 window.onclick = (e) => {
-    if (e.target === modal) modal.classList.remove('active');
+    if (e.target === modal) {
+        modal.classList.remove('active');
+        document.body.classList.remove('no-scroll');
+    }
     if (e.target === confirmModal) confirmModal.classList.remove('active');
 };
 
