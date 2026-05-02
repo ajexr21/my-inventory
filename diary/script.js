@@ -214,10 +214,16 @@ window.getAuthorKey = function(author) {
     return map[author] || 'dad';
 };
 
-window.openModal = function(modal) { if (modal) modal.classList.remove('hidden'); };
+window.openModal = function(modal) { 
+    if (modal) {
+        modal.classList.remove('hidden'); 
+        document.body.classList.add('no-scroll');
+    }
+};
 window.closeModal = function(modal) { 
     if (modal) {
         modal.classList.add('hidden');
+        document.body.classList.remove('no-scroll');
         if (modal.id === 'write-modal') window.clearForm();
     }
 };
@@ -284,6 +290,13 @@ window.initEventListeners = function() {
             window.renderDiaries();
         });
     }
+
+    // 모달 바깥 영역 클릭 시 닫기 (일기 쓰기 모달은 제외)
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal') && e.target.id !== 'write-modal') {
+            window.closeModal(e.target);
+        }
+    });
 
     const closeViewBtn = document.querySelector('.close-view');
     if (closeViewBtn) closeViewBtn.addEventListener('click', () => window.closeModal(viewModal));

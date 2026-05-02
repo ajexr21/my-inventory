@@ -57,11 +57,13 @@ function showConfirm(message) {
         if (!confirmModal) { resolve(true); return; }
         confirmModal.querySelector('h2').innerText = message;
         confirmModal.classList.add('active');
+        document.body.classList.add('no-scroll');
         
         const handleOk = () => { cleanup(); resolve(true); };
         const handleCancel = () => { cleanup(); resolve(false); };
         const cleanup = () => {
             confirmModal.classList.remove('active');
+            document.body.classList.remove('no-scroll');
             confirmOk.removeEventListener('click', handleOk);
             confirmCancel.removeEventListener('click', handleCancel);
         };
@@ -303,6 +305,7 @@ window.openEditModal = (id) => {
     
     document.getElementById('delete-item-btn').style.display = 'block';
     addModal.classList.add('active');
+    document.body.classList.add('no-scroll');
 };
 
 if (itemForm) {
@@ -334,6 +337,7 @@ if (itemForm) {
         if (!error) {
             itemForm.reset();
             addModal.classList.remove('active');
+            document.body.classList.remove('no-scroll');
             await loadItems();
         } else {
             alert('저장에 실패했습니다.');
@@ -349,10 +353,19 @@ if (openModalBtn) {
         itemForm.reset();
         document.getElementById('delete-item-btn').style.display = 'none';
         addModal.classList.add('active');
+        document.body.classList.add('no-scroll');
     };
 }
-if (closeModalBtn) closeModalBtn.onclick = () => addModal.classList.remove('active');
-window.onclick = (e) => { if (e.target === addModal) addModal.classList.remove('active'); };
+if (closeModalBtn) closeModalBtn.onclick = () => {
+    addModal.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+};
+window.onclick = (e) => { 
+    if (e.target === addModal) {
+        addModal.classList.remove('active');
+        document.body.classList.remove('no-scroll');
+    }
+};
 
 // 모달 내 삭제 버튼
 const deleteItemBtn = document.getElementById('delete-item-btn');
@@ -361,6 +374,7 @@ if (deleteItemBtn) {
         if (editingId) {
             await window.deleteItem(editingId);
             addModal.classList.remove('active');
+            document.body.classList.remove('no-scroll');
         }
     };
 }

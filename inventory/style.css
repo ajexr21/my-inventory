@@ -46,6 +46,11 @@ body {
     transition: var(--transition-premium, 0.3s);
 }
 
+body.no-scroll {
+    overflow: hidden;
+    height: 100vh;
+}
+
 .container {
     max-width: 800px;
     margin: 0 auto;
