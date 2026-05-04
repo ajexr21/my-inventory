@@ -499,15 +499,20 @@
                     obj.innerText = `${current}개`;
                 } else if (elementId === 'lib-finished-count' || elementId === 'lib-reading-count') {
                     obj.innerText = `${current}권`;
+                } else if (elementId === 'pharmacy-taken-count') {
+                    obj.innerText = `${current}회`;
+                } else if (elementId === 'pharmacy-low-stock') {
+                    obj.innerText = `${current}건`;
                 } else {
                     obj.innerText = `${current.toLocaleString()}원`;
                 }
 
                 if (progress < 1) requestAnimationFrame(update);
                 else {
-                    if (elementId === 'low-stock-count') obj.innerText = `${endVal}건`;
+                    if (elementId === 'low-stock-count' || elementId === 'pharmacy-low-stock') obj.innerText = `${endVal}건`;
                     else if (elementId === 'lotto-game-count' || elementId === 'lotto-win-count') obj.innerText = `${endVal}개`;
                     else if (elementId === 'lib-finished-count' || elementId === 'lib-reading-count') obj.innerText = `${endVal}권`;
+                    else if (elementId === 'pharmacy-taken-count') obj.innerText = `${endVal}회`;
                     else obj.innerText = `${endVal.toLocaleString()}원`;
                 }
             }
