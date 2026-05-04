@@ -339,6 +339,28 @@
                     우리 가족의 소중한 추억 보관소 ✨
                 </div>
             </a>
+
+            <!-- 우리집 약국 카드 -->
+            <a href="pharmacy/index.html" class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(20, 184, 166, 0.15); color: #14B8A6;">💊</div>
+                    <h2>우리집 약국</h2>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-item">
+                        <span class="label">오늘 복용</span>
+                        <span id="pharmacy-taken-count" class="value highlight">0회</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">부족한 약</span>
+                        <span id="pharmacy-low-stock" class="value minus">0건</span>
+                    </div>
+                </div>
+                <div id="pharmacy-message"
+                    style="margin-top: 15px; font-size: 14px; color: var(--text-sub); line-height: 1.6;">
+                    가족 건강을 확인하고 있어요... 🏥
+                </div>
+            </a>
         </div>
     </div>
 
@@ -674,10 +696,33 @@
                     }
                 }
 
+                // 7. 약국 데이터 조회
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const { data: pharmaLogs } = await _supabase.from('dosage_logs').select('id').gte('taken_at', today.toISOString());
+                const { data: pharmaInv } = await _supabase.from('medicine_inventory').select('item_name, stock_quantity');
+                
+                const lowStockMeds = pharmaInv?.filter(m => m.stock_quantity <= 3) || [];
+                const takenCount = pharmaLogs?.length || 0;
+
+                animateCount('pharmacy-taken-count', dashboardPrevValues.pharmaTaken || 0, takenCount);
+                animateCount('pharmacy-low-stock', dashboardPrevValues.pharmaLow || 0, lowStockMeds.length);
+
+                const pharmaMsg = document.getElementById('pharmacy-message');
+                if (lowStockMeds.length > 0) {
+                    pharmaMsg.innerHTML = `<span style="color:#e74c3c">${lowStockMeds[0].item_name} 등 재고가 부족해요! 🏃‍♀️</span>`;
+                } else if (takenCount > 0) {
+                    pharmaMsg.innerText = '오늘도 잊지 않고 약을 잘 챙겨 드셨네요! 👍';
+                } else {
+                    pharmaMsg.innerText = '우리 가족의 건강을 스마트하게 관리하세요! 🏥';
+                }
+
                 dashboardPrevValues.lotto = totalLottoGames;
                 dashboardPrevValues.lottoWin = winningLottoGames;
                 dashboardPrevValues.libFinished = finishedBooks;
                 dashboardPrevValues.libReading = readingBooks;
+                dashboardPrevValues.pharmaTaken = takenCount;
+                dashboardPrevValues.pharmaLow = lowStockMeds.length;
 
             } catch (e) {
                 console.error('Dashboard load failed:', e);

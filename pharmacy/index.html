@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>우리집 약국 - 스마트 건강 관리</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
+    <script src="../config.js?v=1.1.0"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header>
+            <div class="header-left">
+                <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <h1 class="logo">우리집 약국</h1>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="icon-btn"><i class="fas fa-sun"></i></button>
+            </div>
+        </header>
+
+        <!-- 요약 대시보드: 가족 공용 버전 -->
+        <!-- 메인 메뉴 탭 (Floating) -->
+        <nav class="main-tabs">
+            <button class="tab-btn active" data-tab="logs">
+                <i class="fas fa-notes-medical"></i>
+                <span>복용기록</span>
+            </button>
+            <button class="tab-btn" data-tab="inventory">
+                <i class="fas fa-prescription-bottle-alt"></i>
+                <span>처방약</span>
+            </button>
+            <button class="tab-btn" data-tab="emergency">
+                <i class="fas fa-first-aid"></i>
+                <span>상비약</span>
+            </button>
+            <button class="tab-btn" data-tab="search">
+                <i class="fas fa-search"></i>
+                <span>약찾기</span>
+            </button>
+        </nav>
+
+        <!-- 탭 콘텐츠: 처방 약장 -->
+        <main id="tab-inventory" class="tab-content">
+            <div class="content-header">
+                <h2>처방 약장 <span class="count" id="total-medicine-count">0</span></h2>
+                <button class="add-btn" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> 추가하기
+                </button>
+            </div>
+
+            <div id="medicine-list" class="medicine-grid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>약장을 확인하고 있어요...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 탭 콘텐츠: 상비약 -->
+        <main id="tab-emergency" class="tab-content">
+            <div class="content-header">
+                <h2>상비약 목록</h2>
+                <button class="add-btn" onclick="openEmergencyAddModal()">
+                    <i class="fas fa-plus"></i> 추가하기
+                </button>
+            </div>
+            <div id="emergency-medicine-list" class="medicine-grid">
+                <p class="empty-state">등록된 상비약이 없습니다.</p>
+            </div>
+        </main>
+
+        <!-- 탭 콘텐츠: 복용 기록 -->
+        <main id="tab-logs" class="tab-content active">
+            <div class="content-header">
+                <h2>오늘의 복용 기록</h2>
+                <button class="add-btn" onclick="openManualDosageModal()">
+                    <i class="fas fa-plus"></i> 기록추가
+                </button>
+            </div>
+            <div id="dosage-logs-list" class="logs-container">
+                <p class="empty-state">아직 오늘 기록이 없어요.</p>
+            </div>
+        </main>
+
+        <!-- 탭 콘텐츠: 약 찾기 -->
+        <main id="tab-search" class="tab-content">
+            <div class="naver-search-section">
+                <div class="naver-search-card">
+                    <div class="naver-logo-box">
+                        <i class="fas fa-book-medical"></i>
+                    </div>
+                    <h3>궁금한 약 정보를 검색해보세요</h3>
+                    <p>네이버 지식백과의 전문 의약품 사전을 통해<br>효능, 용법, 주의사항을 가장 정확하게 확인하실 수 있습니다.</p>
+                    <a href="https://terms.naver.com/medicineSearch.naver" target="_blank" class="naver-search-btn">
+                        네이버 약 검색 바로가기 <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 모달: 약 등록/수정 -->
+    <div id="medicine-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="modal-title">약 등록하기</h3>
+                <button class="close-btn" onclick="closeModal('medicine-modal')">&times;</button>
+            </div>
+            <form id="medicine-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>복용 이름 (증상/목적)</label>
+                    <input type="text" id="item_name" required placeholder="예: 감기약, 고혈압약, 영양제">
+                </div>
+                
+                <!-- 처방약 전용 필드 -->
+                <div id="prescription-fields">
+                    <div class="form-group">
+                        <label>복용 방법 (다중 선택)</label>
+                        <div class="chip-group" id="take-time-group">
+                            <button type="button" class="chip" data-value="아침">아침</button>
+                            <button type="button" class="chip" data-value="점심">점심</button>
+                            <button type="button" class="chip" data-value="저녁">저녁</button>
+                            <button type="button" class="chip" data-value="취침전">취침전</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>식전/식후</label>
+                            <select id="take_timing">
+                                <option value="식후 30분">식후 30분</option>
+                                <option value="식전 30분">식전 30분</option>
+                                <option value="식후 즉시">식후 즉시</option>
+                                <option value="취침 전">취침 전</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>복용 일수</label>
+                            <input type="number" id="total_days" placeholder="예: 3">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; justify-content: space-between; align-items: center;">
+                            상세 약 리스트 (선택)
+                            <button type="button" class="add-detail-btn" onclick="addDetailRow()" style="background: none; border: none; color: var(--primary); font-weight: 800; cursor: pointer; font-size: 0.8rem;">
+                                <i class="fas fa-plus-circle"></i> 약품 추가
+                            </button>
+                        </label>
+                        <div id="medicine-detail-list" class="detail-list-container">
+                            <!-- 상세 항목들 (JS로 동적 추가) -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 상비약 전용 필드 (재고 관리) -->
+                <div id="emergency-fields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>현재 수량 (재고)</label>
+                            <input type="number" id="stock_quantity" placeholder="예: 10">
+                        </div>
+                        <div class="form-group">
+                            <label>단위</label>
+                            <input type="text" id="unit" placeholder="예: 정, 포, 개" value="정">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="category">
+                            <option value="상비약">상비약</option>
+                            <option value="감기/몸살">감기/몸살</option>
+                            <option value="소화/위장">소화/위장</option>
+                            <option value="연고/파스">연고/파스</option>
+                            <option value="영양제">영양제</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" style="margin-top: 10px;">저장하기</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 모달: 복용 기록 추가 -->
+    <div id="dosage-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><span id="dosage-medicine-name" style="color: var(--primary); font-weight: 800;">약 이름</span> 복용 기록</h3>
+                <button class="close-btn" onclick="closeModal('dosage-modal')">&times;</button>
+            </div>
+            <form id="dosage-form">
+                <input type="hidden" id="dosage-medicine-id">
+                
+                <div class="form-group" id="manual-medicine-select" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>약 종류</label>
+                            <select id="dosage-type-select">
+                                <option value="처방약">처방약</option>
+                                <option value="상비약">상비약</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>약품명</label>
+                            <select id="dosage-medicine-select">
+                                <!-- JS로 옵션 추가 -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>복용자</label>
+                    <div class="chip-group" id="family-member-group">
+                        <button type="button" class="chip" data-value="아빠">아빠</button>
+                        <button type="button" class="chip" data-value="엄마">엄마</button>
+                        <button type="button" class="chip" data-value="교현">교현</button>
+                        <button type="button" class="chip" data-value="교빈">교빈</button>
+                        <button type="button" class="chip" data-value="교은">교은</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>복용 시간</label>
+                    <div class="chip-group" id="dosage-time-group">
+                        <button type="button" class="chip" data-value="아침">아침</button>
+                        <button type="button" class="chip" data-value="점심">점심</button>
+                        <button type="button" class="chip" data-value="저녁">저녁</button>
+                        <button type="button" class="chip" data-value="취침전">취침전</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>복용량</label>
+                    <div class="dosage-input-group" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="dosage_amount" value="1" step="0.1" style="flex: 1;">
+                        <span id="dosage-unit-label" style="font-weight: 800; color: var(--primary);">회분</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>메모</label>
+                    <textarea id="dosage_notes" placeholder="증상이나 특이사항을 적어주세요"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">복용 완료</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 모달: 카메라 OCR 인식 -->
+    <div id="camera-modal" class="modal">
+        <div class="modal-content camera-modal-content">
+            <div class="modal-header">
+                <h3>약 이름 인식</h3>
+                <button class="close-btn" onclick="closeCameraModal()">&times;</button>
+            </div>
+            <div class="camera-view-container">
+                <video id="camera-video" autoplay playsinline></video>
+                <div class="camera-overlay">
+                    <div class="focus-box" style="width: 80%; height: 150px; border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); position: relative;"></div>
+                </div>
+            </div>
+            <div class="camera-actions">
+                <button id="capture-btn" class="capture-btn"><i class="fas fa-camera"></i></button>
+                <input type="file" id="file-input" accept="image/*" style="display:none">
+                <button id="gallery-btn" class="gallery-btn" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid white; color: white; cursor: pointer;"><i class="fas fa-image"></i></button>
+            </div>
+            <div id="ocr-status" class="ocr-status"></div>
+            <canvas id="capture-canvas" style="display:none"></canvas>
+        </div>
+    </div>
+    <!-- 모달: 확인창 -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content confirm-modal-content" style="max-width: 320px; text-align: center; padding: 30px; border-radius: 28px;">
+            <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 id="confirm-title" style="margin-bottom: 10px; font-weight: 800; font-size: 1.25rem;">정말 삭제할까요?</h3>
+            <p id="confirm-message" style="margin-bottom: 25px; opacity: 0.7; line-height: 1.5; font-size: 0.95rem; word-break: keep-all;"></p>
+            <div style="display: flex; gap: 12px;">
+                <button id="confirm-cancel" class="action-btn" style="flex: 1; height: 52px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 700; border-radius: 16px;">취소</button>
+                <button id="confirm-ok" class="action-btn" style="flex: 1; height: 52px; background: #ef4444; border: none; color: white; font-weight: 800; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2); border-radius: 16px;">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림: 토스트 -->
+    <div id="success-toast" class="toast-container">
+        <div class="toast-content">
+            <div class="toast-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <span id="toast-message">복용 기록이 등록되었습니다!</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
