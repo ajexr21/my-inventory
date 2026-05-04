@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <link rel="stylesheet" href="style.css?v=1.3.0">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=1.3.2">
 </head>
 <body>
     <div class="app-container">
@@ -34,32 +35,24 @@
                 </div>
                 
                 <div class="plant-container">
-                    <div id="magic-plant" class="plant-emoji">🌱</div>
-                    <div class="plant-info">
-                        <span id="plant-level-name">초보 정원사 교은이</span>
-                        <div class="exp-bar-container">
-                            <div id="plant-exp" class="exp-bar-fill"></div>
+                    <div class="garden-view">
+                        <div class="plant-sprite-wrapper">
+                            <div id="sparkle-container" class="sparkle-container"></div>
+                            <img id="plant-sprite" class="plant-stage-img" src="assets/stage1.png" alt="성장 중인 식물">
+                            <div class="pot-shadow"></div>
                         </div>
                     </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <span class="stat-num" id="total-books">0</span>
-                        <span class="stat-label">읽은 책</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-num" id="current-goal">10</span>
-                        <span class="stat-label">목표</span>
+                    <div class="plant-info">
+                        <div class="level-badge" id="plant-level-badge">LV.1</div>
+                        <span id="plant-level-name">정원사 교은이의 꿈나무</span>
+                        <div class="exp-bar-container">
+                            <div id="plant-exp" class="exp-bar-fill"></div>
+                            <span class="exp-text" id="exp-text">0 / 10</span>
+                        </div>
+                        <div class="total-stats-text" id="total-stats-text">총 0권 읽음 / 목표 10권</div>
                     </div>
                 </div>
-                
-                <div class="goal-msg">
-                    목표까지 <span id="remaining-books">10</span>권 남았어요!
-                    <div class="mini-progress"><div id="goal-progress" class="mini-fill"></div></div>
-                </div>
+
             </section>
 
             <!-- 탭 콘텐츠 영역 -->

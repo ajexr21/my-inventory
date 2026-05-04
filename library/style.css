@@ -142,25 +142,160 @@ body {
 .plant-container {
     display: flex;
     align-items: center;
-    gap: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: var(--radius-md);
-    margin-bottom: 20px;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 20px; /* 세로 패딩 축소 */
+    border-radius: var(--radius-lg);
+    margin: 0 20px 15px; /* 하단 여백 축소 */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 20px rgba(167, 139, 250, 0.05);
 }
 
-.plant-emoji {
-    font-size: 2rem;
-    animation: sway 3s ease-in-out infinite;
+.garden-view {
+    width: 120px;
+    height: 140px;
+    background: radial-gradient(circle at center, rgba(167, 139, 250, 0.08) 0%, transparent 70%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
-@keyframes sway {
-    0%, 100% { transform: rotate(-5deg); }
-    50% { transform: rotate(5deg); }
+.plant-sprite-wrapper {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plant-stage-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+}
+
+/* 1-2단계: 꿈틀꿈틀 애니메이션 */
+.plant-wiggle {
+    animation: wiggle 3s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+    0%, 90%, 100% { transform: rotate(0deg) scale(1); }
+    93% { transform: rotate(-5deg) scale(1.05); }
+    96% { transform: rotate(5deg) scale(1.05); }
+}
+
+/* 3-4단계: 둥실둥실 애니메이션 */
+.plant-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* 5단계: 불꽃/반짝임 효과 전용 컨테이너 */
+.sparkle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: firework 1s ease-out forwards;
+}
+
+@keyframes firework {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: translate(var(--x), var(--y)) scale(1); opacity: 0; }
+}
+
+.pot-shadow {
+    position: absolute;
+    bottom: 5px;
+    width: 50px;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    filter: blur(4px);
+    z-index: 1;
 }
 
 .plant-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 900;
+    border-radius: 8px;
+    width: fit-content;
+    box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3);
+}
+
+#plant-level-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.3px;
+}
+
+.exp-bar-container {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    position: relative;
+    overflow: visible;
+    margin-top: 5px;
+}
+
+.exp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 10px;
+    width: 0%;
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+}
+
+.exp-text {
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent-color);
+}
+
+.total-stats-text {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    opacity: 0.8;
 }
 
 #plant-level-name {
@@ -309,12 +444,16 @@ body {
     position: absolute;
     top: 8px;
     right: 8px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.7rem;
     font-weight: 800;
-    background: rgba(0,0,0,0.6);
+    color: white;
     backdrop-filter: blur(4px);
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
 }
 
 /* --- Tab Nav (우리집 표준) --- */
@@ -786,7 +925,7 @@ body {
 .page-badge {
     position: absolute;
     bottom: 8px;
-    left: 8px;
+    right: 8px;
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 0.75rem;
@@ -796,6 +935,81 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     z-index: 5;
     font-family: 'Outfit', sans-serif;
+}
+
+/* 읽은 횟수(N회독) 뱃지 */
+.read-count-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    background: rgba(244, 114, 182, 0.9); /* 포인트 핑크 */
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 5;
+    font-family: 'Outfit', sans-serif;
+    backdrop-filter: blur(4px);
+}
+
+/* 상세 모달 읽은 횟수 섹션 */
+.read-count-section {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.read-count-container {
+    background: rgba(167, 139, 250, 0.08);
+    border: 2px dashed rgba(167, 139, 250, 0.3);
+    border-radius: 20px;
+    padding: 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.read-count-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.read-count-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.read-count-num {
+    font-size: 1.8rem;
+    font-weight: 900;
+    font-family: 'Outfit', sans-serif;
+    color: var(--accent-color);
+    text-shadow: 0 4px 10px rgba(244, 114, 182, 0.2);
+}
+
+.read-count-unit {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.read-count-icons {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    font-size: 1rem;
+}
+
+.med-emoji {
+    display: inline-block;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .delete-btn {
