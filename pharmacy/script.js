@@ -43,6 +43,15 @@ function initTheme() {
         if (toggleBtn) {
             const icon = toggleBtn.querySelector('i');
             if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            toggleBtn.onclick = () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('hub-theme', newTheme);
+                if (icon) icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            };
         }
     } catch (e) {}
 }
@@ -113,7 +122,7 @@ function renderInventory(items) {
         
         let timeInfo = "복용 정보 없음";
         if (item.entp_name && typeof item.entp_name === 'string' && item.entp_name.includes('|')) {
-            timeInfo = item.entp_name.replace('|', ' · ');
+            timeInfo = item.entp_name.replace('|', '<br>');
         } else if (item.entp_name) {
             timeInfo = item.entp_name;
         }
@@ -126,10 +135,13 @@ function renderInventory(items) {
             }
         } catch (e) { detailCount = 0; }
 
+        const iconClass = (item.category === '상비약') ? 'fas fa-pills' : 'fas fa-file-prescription';
+        const iconColor = (item.category === '상비약') ? 'var(--accent)' : 'var(--primary)';
+
         card.innerHTML = `
             <div class="med-info">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                    <i class="fas fa-file-prescription" style="color: var(--primary); font-size: 1.2rem;"></i>
+                    <i class="${iconClass}" style="color: ${iconColor}; font-size: 1.2rem;"></i>
                     <h4 style="font-weight: 800; font-size: 1.05rem;">${item.item_name}</h4>
                 </div>
                 <p style="color: var(--primary); font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">${timeInfo}</p>
@@ -212,13 +224,20 @@ async function loadDailyLogs() {
         logsContainer.innerHTML = '';
         data.forEach(log => {
             const time = new Date(log.taken_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            const med = log.medicine_inventory;
+            const logIconClass = (med?.category === '상비약') ? 'fas fa-pills' : 'fas fa-file-prescription';
+            const logIconColor = (med?.category === '상비약') ? 'var(--accent)' : 'var(--primary)';
+
             const item = document.createElement('div');
             item.className = 'log-card'; 
             item.innerHTML = `
                 <div class="log-info">
                     <h4 style="font-family: 'Gaegu', cursive; font-size: 1.15rem; color: var(--primary); margin-bottom: 2px;">${log.family_member}님이 복용함</h4>
-                    <p style="font-weight: 700; font-size: 0.95rem;">${log.medicine_inventory?.item_name || '알 수 없는 약'}</p>
-                    <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 2px;">${log.dosage_amount}${log.medicine_inventory?.unit || '회분'} · ${log.notes || '메모 없음'}</p>
+                    <p style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="${logIconClass}" style="color: ${logIconColor}; font-size: 0.9rem;"></i>
+                        ${med?.item_name || '알 수 없는 약'}
+                    </p>
+                    <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 2px;">${log.dosage_amount}${med?.unit || '회분'} · ${log.notes || '메모 없음'}</p>
                 </div>
                 <div class="log-actions" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                     <button class="delete-log-btn" onclick="deleteLog('${log.id}', '${log.medicine_id}', ${log.dosage_amount})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0 0 5px 10px; opacity: 0.6; transition: opacity 0.2s;">
@@ -233,14 +252,61 @@ async function loadDailyLogs() {
 }
 
 // 약 등록/수정 모달 관련 로직
-function openAddModal() {
-    document.getElementById('modal-title').innerText = '약 등록하기';
+function openAddModal(mode = 'prescription') {
+    const modalTitle = document.getElementById('modal-title');
+    const prescriptionFields = document.getElementById('prescription-fields');
+    const emergencyFields = document.getElementById('emergency-fields');
+    
+    if (mode === 'prescription') {
+        modalTitle.innerText = '약 등록하기';
+        if (prescriptionFields) prescriptionFields.style.display = 'block';
+        if (emergencyFields) emergencyFields.style.display = 'none';
+    } else {
+        modalTitle.innerText = '상비약 등록하기';
+        if (prescriptionFields) prescriptionFields.style.display = 'none';
+        if (emergencyFields) emergencyFields.style.display = 'block';
+    }
+
     document.getElementById('medicine-form').reset();
     document.getElementById('edit-id').value = '';
+    const detailList = document.getElementById('medicine-detail-list');
+    if (detailList) {
+        detailList.innerHTML = ''; // 상세 리스트 초기화
+        if (mode === 'prescription') {
+            for (let i = 0; i < 5; i++) addDetailRow(); // 기본 5개 입력창 생성
+        }
+    }
     
     // 칩 초기화
     document.querySelectorAll('#take-time-group .chip').forEach(c => c.classList.remove('selected'));
     document.getElementById('medicine-modal').classList.add('active');
+}
+
+function openEmergencyAddModal() {
+    openAddModal('emergency');
+}
+
+function addDetailRow(data = { name: '', cap: '', dose: '', freq: '' }) {
+    const list = document.getElementById('medicine-detail-list');
+    if (!list) return;
+
+    const row = document.createElement('div');
+    row.className = 'detail-row';
+    row.innerHTML = `
+        <input type="text" placeholder="약품명" value="${data.name || ''}" style="grid-column: span 2; text-align: left;">
+        <input type="text" placeholder="용량" value="${data.cap || ''}">
+        <input type="text" placeholder="투약량" value="${data.dose || ''}">
+        <input type="number" placeholder="횟수" value="${data.freq || ''}">
+        <button type="button" class="remove-detail-btn" onclick="removeDetailRow(this)"><i class="fas fa-times"></i></button>
+    `;
+    list.appendChild(row);
+    
+    // 모바일에서 입력 시 스크롤 아래로
+    list.scrollTop = list.scrollHeight;
+}
+
+function removeDetailRow(btn) {
+    btn.parentElement.remove();
 }
 
 function closeModal(modalId) {
@@ -264,17 +330,46 @@ document.addEventListener('click', e => {
 document.getElementById('medicine-form').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
-    const selectedTimes = Array.from(document.querySelectorAll('#take-time-group .chip.selected')).map(c => c.dataset.value);
-    const takeTiming = document.getElementById('take_timing').value;
+    const isEmergency = document.getElementById('emergency-fields').style.display === 'block';
     
-    const formData = {
+    let formData = {
         user_id: currentUser.id,
         item_name: document.getElementById('item_name').value,
-        entp_name: `${selectedTimes.join(', ')} | ${takeTiming}`,
-        unit: '회분',
-        stock_quantity: parseInt(document.getElementById('stock_quantity')?.value || 0),
-        category: '처방약'
     };
+
+    if (isEmergency) {
+        formData = {
+            ...formData,
+            category: document.getElementById('category').value,
+            stock_quantity: parseInt(document.getElementById('stock_quantity').value || 0),
+            unit: document.getElementById('unit').value || '정',
+            entp_name: '필요시 복용' // 상비약은 기본 정보
+        };
+    } else {
+        const selectedTimes = Array.from(document.querySelectorAll('#take-time-group .chip.selected')).map(c => c.dataset.value);
+        const takeTiming = document.getElementById('take_timing').value;
+        
+        // 상세 약 리스트 수집
+        const detailRows = document.querySelectorAll('.detail-row');
+        const itemSeq = Array.from(detailRows).map(row => {
+            const inputs = row.querySelectorAll('input');
+            return {
+                name: inputs[0].value,
+                cap: inputs[1].value,
+                dose: inputs[2].value,
+                freq: inputs[3].value
+            };
+        }).filter(item => item.name);
+
+        formData = {
+            ...formData,
+            entp_name: `${selectedTimes.join(', ')} | ${takeTiming}`,
+            unit: '회분',
+            stock_quantity: parseInt(document.getElementById('total_days')?.value || 0), 
+            category: '처방약',
+            item_seq: JSON.stringify(itemSeq)
+        };
+    }
 
     try {
         let result;
@@ -299,18 +394,41 @@ async function editMedicine(id) {
         const { data } = await _supabase.from('medicine_inventory').select('*').eq('id', id).single();
         if (!data) return;
 
-        openAddModal();
-        document.getElementById('modal-title').innerText = '약 수정하기';
+        const isEmergency = data.category && data.category !== '처방약';
+        openAddModal(isEmergency ? 'emergency' : 'prescription');
+        
+        document.getElementById('modal-title').innerText = isEmergency ? '상비약 수정하기' : '약 수정하기';
         document.getElementById('edit-id').value = data.id;
         document.getElementById('item_name').value = data.item_name;
         
-        if (data.entp_name && data.entp_name.includes('|')) {
-            const [times, timing] = data.entp_name.split(' | ');
-            const timeArray = times.split(', ');
-            document.querySelectorAll('#take-time-group .chip').forEach(c => {
-                if (timeArray.includes(c.dataset.value)) c.classList.add('selected');
-            });
-            document.getElementById('take_timing').value = timing;
+        if (isEmergency) {
+            document.getElementById('category').value = data.category;
+            document.getElementById('stock_quantity').value = data.stock_quantity || '';
+            document.getElementById('unit').value = data.unit || '정';
+        } else {
+            if (data.entp_name && data.entp_name.includes('|')) {
+                const [times, timing] = data.entp_name.split(' | ');
+                const timeArray = times.split(', ');
+                document.querySelectorAll('#take-time-group .chip').forEach(c => {
+                    if (timeArray.includes(c.dataset.value)) c.classList.add('selected');
+                });
+                document.getElementById('take_timing').value = timing;
+            }
+            document.getElementById('total_days').value = data.stock_quantity || '';
+            
+            // 상세 리스트 복원
+            const detailList = document.getElementById('medicine-detail-list');
+            if (detailList) {
+                detailList.innerHTML = '';
+                if (data.item_seq) {
+                    try {
+                        const items = typeof data.item_seq === 'string' ? JSON.parse(data.item_seq) : data.item_seq;
+                        if (Array.isArray(items)) {
+                            items.forEach(item => addDetailRow(item));
+                        }
+                    } catch (e) {}
+                }
+            }
         }
     } catch (err) {
         alert('정보를 불러오지 못했습니다.');

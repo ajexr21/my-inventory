@@ -88,16 +88,24 @@ header {
 }
 
 .icon-btn {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     width: 40px;
     height: 40px;
-    border-radius: 12px;
+    border-radius: 50%;
     color: var(--text-main);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.icon-btn:hover {
+    background: rgba(100, 116, 139, 0.1);
 }
 
 /* --- Summary Card (Premium Dashboard) --- */
@@ -214,6 +222,10 @@ header {
     margin: 0 20px 25px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow);
+}
+
+[data-theme="light"] .main-tabs {
+    background: rgba(255, 255, 255, 0.8);
 }
 
 .tab-btn {
@@ -642,13 +654,17 @@ header {
 
 /* Detail List Styling */
 .detail-list-container {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 16px;
-    padding: 15px;
+    background: none;
+    border-radius: 0;
+    padding: 0;
     margin-top: 5px;
-    height: 260px; /* 5개 행이 여백 없이 딱 맞도록 조정 */
+    height: 255px; /* 5개 행이 딱 들어가도록 고정 높이 설정 */
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: none;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
 }
 
 /* Custom Scrollbar */
@@ -671,25 +687,39 @@ header {
 
 .detail-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 30px;
-    gap: 8px;
-    margin-bottom: 12px;
+    grid-template-columns: repeat(5, 1fr) 35px; /* 이름(2) + 용량(1) + 투약량(1) + 횟수(1) + 삭제(35px) */
+    gap: 6px;
+    margin-bottom: 10px;
     align-items: center;
 }
 
-.detail-row:last-child {
-    margin-bottom: 0;
+@media (max-width: 480px) {
+    .detail-row {
+        grid-template-columns: repeat(5, 1fr) 30px;
+        gap: 4px;
+    }
 }
 
 .detail-row input {
     width: 100% !important;
-    padding: 8px 6px !important;
-    font-size: 0.8rem !important;
+    padding: 10px 8px !important;
+    font-size: 0.85rem !important;
     text-align: center;
-    border-radius: 8px !important;
-    background: var(--bg-color);
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-main);
     border: 1px solid var(--border-color);
+    outline: none;
+}
+
+.detail-row input:focus {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.detail-row input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
 }
 
 .detail-row input:first-child {
