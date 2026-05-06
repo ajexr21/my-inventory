@@ -149,28 +149,40 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        bookListContainer.innerHTML = filteredBooks.map(book => `
+        bookListContainer.innerHTML = filteredBooks.map(book => {
+            const hasCover = book.cover_url && book.cover_url.trim() !== '';
+            
+            return `
             <div class="book-card" onclick="openBookDetail('${book.id}')" style="position: relative;">
-                <img src="${book.cover_url || 'https://via.placeholder.com/150x200?text=No+Cover'}" class="book-cover" alt="${book.title}">
-                <div class="status-badge" style="background: ${getStatusColor(book.status, book.read_count)}">
-                    ${getStatusText(book.status, book.read_count)}
+                <div class="book-cover-area">
+                    ${hasCover ? 
+                        `<img src="${book.cover_url}" class="book-cover" alt="${book.title}">` : 
+                        `<div class="no-cover-placeholder">
+                            <i class="fas fa-book"></i>
+                            <span>이미지 없음</span>
+                        </div>`
+                    }
+                    <div class="status-badge" style="background: ${getStatusColor(book.status, book.read_count)}">
+                        ${getStatusText(book.status, book.read_count)}
+                    </div>
+                    ${book.read_count > 0 ? `
+                        <div class="read-count-badge">
+                            <i class="fas fa-book" style="margin-right: 4px;"></i>x${book.read_count}
+                        </div>
+                    ` : ''}
+                    ${book.status === 'reading' && book.current_page ? `
+                        <div class="page-badge">
+                            <i class="fas fa-bookmark" style="margin-right: 4px;"></i>p.${book.current_page}
+                        </div>
+                    ` : ''}
                 </div>
-                ${book.read_count > 0 ? `
-                    <div class="read-count-badge">
-                        <i class="fas fa-book" style="margin-right: 4px;"></i>x${book.read_count}
-                    </div>
-                ` : ''}
-                ${book.status === 'reading' && book.current_page ? `
-                    <div class="page-badge">
-                        <i class="fas fa-bookmark" style="margin-right: 4px;"></i>p.${book.current_page}
-                    </div>
-                ` : ''}
                 <div class="book-info">
                     <h3 class="book-title">${book.title}</h3>
                     <p class="book-author">${book.author || '작가 미상'}</p>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function getStatusText(status, readCount = 0) {
@@ -547,7 +559,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         modalBody.innerHTML = `
             <div class="book-detail">
-                <img src="${book.cover_url || 'https://via.placeholder.com/150x200?text=No+Cover'}" class="detail-cover">
+                <div class="detail-cover-wrapper" onclick="document.getElementById('update-cover-input').click()">
+                    ${book.cover_url ? 
+                        `<img src="${book.cover_url}" class="detail-cover">` : 
+                        `<div class="detail-cover no-image">
+                            <div class="cover-add-overlay">
+                                <i class="fas fa-camera"></i>
+                                <span>사진 추가</span>
+                            </div>
+                        </div>`
+                    }
+                </div>
+                <input type="file" id="update-cover-input" accept="image/*" hidden onchange="updateBookCoverImage('${book.id}', this.files[0])">
                 <h2 class="detail-title">${book.title}</h2>
                 <p class="detail-author">${book.author}</p>
                 
@@ -740,6 +763,36 @@ document.addEventListener('DOMContentLoaded', () => {
             
         if (!error) {
             window.closeModal(document.getElementById('book-modal'));
+        }
+    };
+
+    window.updateBookCoverImage = async (bookId, file) => {
+        if (!file) return;
+        
+        window.showLoading();
+        window.updateLoadingMsg("새로운 표지를 저장하는 중... 📸");
+        
+        const uploadedUrl = await uploadBookCover(file);
+        if (uploadedUrl) {
+            const { error } = await _supabase
+                .from('library_books')
+                .update({ cover_url: uploadedUrl })
+                .eq('id', bookId);
+            
+            if (!error) {
+                await fetchBooks();
+                // 상세 모달을 갱신된 데이터로 다시 열기 위해 지연 호출
+                setTimeout(() => {
+                    openBookDetail(bookId);
+                    window.hideLoading();
+                }, 500);
+            } else {
+                window.hideLoading();
+                await window.customAlert("이미지 주소를 저장하지 못했어요.", "오류");
+            }
+        } else {
+            window.hideLoading();
+            await window.customAlert("이미지 업로드에 실패했어요.", "오류");
         }
     };
 
