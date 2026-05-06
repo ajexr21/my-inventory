@@ -62,16 +62,20 @@ body {
 /* --- App Header (우리집 표준) --- */
 header {
     padding: calc(20px + env(safe-area-inset-top)) 20px 15px;
-    background: rgba(var(--bg-rgb), 0.7);
+    background: transparent !important; /* 배경 막대 제거 */
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: none !important; /* 블러 효과 제거 */
+    border: none !important;
+    box-shadow: none !important;
 }
+
+
+
 
 .header-left {
     display: flex;
@@ -232,12 +236,15 @@ header {
     border-radius: 24px;
     padding: 8px;
     margin: 0 20px 30px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: none; /* 사각틀 제거 */
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     position: sticky;
-    top: 80px;
+    top: calc(75px + env(safe-area-inset-top)); /* 노치 높이를 자동으로 계산하여 대응 */
     z-index: 90;
 }
+
+
+
 
 [data-theme="light"] .main-tabs {
     background: rgba(255, 255, 255, 0.8);
@@ -552,18 +559,28 @@ header {
 /* --- Date Separator (Grouped Logs) --- */
 .date-separator {
     position: sticky;
-    top: 145px; /* main-tabs 아래에 고정 (80px + tabs height) */
+    top: calc(145px + env(safe-area-inset-top)); /* main-tabs 아래에 동적 고정 */
     z-index: 85;
-    background: var(--bg-color);
-    padding: 15px 20px 10px;
-    margin: 0 -20px; /* 컨테이너 밖으로 확장 */
+    background: transparent; /* 배경 투명화 */
+    padding: 25px 0 10px; /* 좌우 여백 제거 */
+    margin: 0; /* 컨테이너 확장 제거 */
     display: flex;
     align-items: center;
     gap: 12px;
+    pointer-events: none; /* 클릭 방해 금지 */
 }
 
-[data-theme="light"] .date-separator {
-    background: var(--bg-color);
+.date-separator span {
+    pointer-events: auto; /* 날짜 텍스트는 상호작용 가능하게 */
+}
+
+
+
+
+/* 라이트 모드 구분선 배경 제거 */
+[data-theme="light"] .date-separator span {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
 }
 
 .date-separator span {
