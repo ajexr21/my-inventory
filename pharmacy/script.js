@@ -73,27 +73,34 @@ function initTabs() {
     });
 }
 
+// 날짜 유틸리티: 현지 시간 기준 오늘 자정의 ISO 문자열 반환 (KST 대응)
+function getTodayStartISO() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return today.toISOString();
+}
+
 // 약 재고 불러오기
 async function loadInventory() {
     try {
+        if (!currentUser) return;
         const medListEl = document.getElementById('medicine-list');
         if (!medListEl) return;
         
         medListEl.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>약장을 확인하고 있어요...</p></div>';
         
-        // 모달에서 성공했던 방식과 동일하게 특정 컬럼들을 명시적으로 조회
         const { data, error } = await _supabase
             .from('medicine_inventory')
-            .select('id, item_name, entp_name, item_seq, stock_quantity, unit, category')
+            .select('id, item_name, taking_info, medication_details, stock_quantity, unit, category')
+            .eq('user_id', currentUser.id)
             .order('item_name');
 
         if (error) throw error;
         renderInventory(data || []);
-        updateDashboard();
     } catch (err) {
         console.error('Error loading inventory:', err);
         const medListEl = document.getElementById('medicine-list');
-        if (medListEl) medListEl.innerHTML = '<p class="empty-state">데이터를 가져오는데 실패했습니다.</p>';
+        if (medListEl) medListEl.innerHTML = '<p class="empty-state">데이터를 가져오는데 실패했습니다. (관리자 문의)</p>';
     }
 }
 
@@ -121,16 +128,17 @@ function renderInventory(items) {
         card.className = 'medicine-card';
         
         let timeInfo = "복용 정보 없음";
-        if (item.entp_name && typeof item.entp_name === 'string' && item.entp_name.includes('|')) {
-            timeInfo = item.entp_name.replace('|', '<br>');
-        } else if (item.entp_name) {
-            timeInfo = item.entp_name;
+        // DB의 taking_info 컬럼을 복용 시간/타이밍 저장용으로 사용 중 (현재 구조 유지)
+        if (item.taking_info && typeof item.taking_info === 'string' && item.taking_info.includes('|')) {
+            timeInfo = item.taking_info.replace('|', '<br>');
+        } else if (item.taking_info) {
+            timeInfo = item.taking_info;
         }
         
         let detailCount = 0;
         try {
-            if (item.item_seq) {
-                const parsedSeq = typeof item.item_seq === 'string' ? JSON.parse(item.item_seq) : item.item_seq;
+            if (item.medication_details) {
+                const parsedSeq = typeof item.medication_details === 'string' ? JSON.parse(item.medication_details) : item.medication_details;
                 detailCount = Array.isArray(parsedSeq) ? parsedSeq.length : 0;
             }
         } catch (e) { detailCount = 0; }
@@ -154,7 +162,6 @@ function renderInventory(items) {
             </div>
         `;
         
-        // 분류 기준 통일: category가 없거나 '처방약'이면 처방약 탭에 표시
         if (!item.category || item.category === '처방약') {
             medicineList.appendChild(card);
             prescriptionCount++;
@@ -177,46 +184,35 @@ function renderInventory(items) {
     if (totalCountEl) totalCountEl.innerText = prescriptionCount;
 }
 
-// 대시보드 업데이트
-async function updateDashboard() {
-    try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const { data: logs } = await _supabase
-            .from('dosage_logs')
-            .select('family_member')
-            .gte('taken_at', today.toISOString());
-        
-        const takenMembers = logs ? [...new Set(logs.map(l => l.family_member))] : [];
-        
-        document.querySelectorAll('.family-member').forEach(el => {
-            const memberName = el.dataset.member;
-            if (takenMembers.includes(memberName)) {
-                el.classList.add('taken');
-            } else {
-                el.classList.remove('taken');
-            }
-        });
-    } catch (e) {}
-}
-
-// 복용 기록 불러오기
+// 복용 기록 및 대시보드 업데이트 (통합 쿼리)
 async function loadDailyLogs() {
     try {
+        if (!currentUser) return;
         const logsContainer = document.getElementById('dosage-logs-list');
         if (!logsContainer) return;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
+        // 명시적으로 필요한 컬럼만 조회 (성능 최적화)
         const { data, error } = await _supabase
             .from('dosage_logs')
-            .select('*, medicine_inventory(item_name, unit)')
-            .gte('taken_at', today.toISOString())
+            .select(`
+                id, family_member, taken_at, dosage_amount, notes, medicine_id,
+                medicine_inventory(item_name, unit, category)
+            `)
+            .eq('user_id', currentUser.id)
+            .gte('taken_at', getTodayStartISO())
             .order('taken_at', { ascending: false });
 
-        if (error || !data || data.length === 0) {
+        if (error) throw error;
+
+        // 1. 대시보드 체크 상태 업데이트
+        const takenMembers = data ? [...new Set(data.map(l => l.family_member))] : [];
+        document.querySelectorAll('.family-member').forEach(el => {
+            const memberName = el.dataset.member;
+            el.classList.toggle('taken', takenMembers.includes(memberName));
+        });
+
+        // 2. 로그 리스트 렌더링
+        if (!data || data.length === 0) {
             logsContainer.innerHTML = '<p class="empty-state">오늘의 복용 기록이 아직 없네요.</p>';
             return;
         }
@@ -224,7 +220,10 @@ async function loadDailyLogs() {
         logsContainer.innerHTML = '';
         data.forEach(log => {
             const time = new Date(log.taken_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-            const med = log.medicine_inventory;
+            
+            let med = log.medicine_inventory;
+            if (Array.isArray(med)) med = med[0];
+
             const logIconClass = (med?.category === '상비약') ? 'fas fa-pills' : 'fas fa-file-prescription';
             const logIconColor = (med?.category === '상비약') ? 'var(--accent)' : 'var(--primary)';
 
@@ -248,8 +247,14 @@ async function loadDailyLogs() {
             `;
             logsContainer.appendChild(item);
         });
-    } catch (e) {}
+    } catch (err) {
+        console.error('Error loading daily logs:', err);
+        const logsContainer = document.getElementById('dosage-logs-list');
+        if (logsContainer) logsContainer.innerHTML = '<p class="empty-state">기록을 불러오는 중 오류가 발생했습니다.</p>';
+    }
 }
+
+
 
 // 약 등록/수정 모달 관련 로직
 function openAddModal(mode = 'prescription') {
@@ -343,7 +348,7 @@ document.getElementById('medicine-form').onsubmit = async (e) => {
             category: document.getElementById('category').value,
             stock_quantity: parseInt(document.getElementById('stock_quantity').value || 0),
             unit: document.getElementById('unit').value || '정',
-            entp_name: '필요시 복용' // 상비약은 기본 정보
+            taking_info: '필요시 복용' // 상비약은 기본 정보
         };
     } else {
         const selectedTimes = Array.from(document.querySelectorAll('#take-time-group .chip.selected')).map(c => c.dataset.value);
@@ -363,11 +368,11 @@ document.getElementById('medicine-form').onsubmit = async (e) => {
 
         formData = {
             ...formData,
-            entp_name: `${selectedTimes.join(', ')} | ${takeTiming}`,
+            taking_info: `${selectedTimes.join(', ')} | ${takeTiming}`,
             unit: '회분',
             stock_quantity: parseInt(document.getElementById('total_days')?.value || 0), 
             category: '처방약',
-            item_seq: JSON.stringify(itemSeq)
+            medication_details: JSON.stringify(itemSeq)
         };
     }
 
@@ -391,8 +396,15 @@ document.getElementById('medicine-form').onsubmit = async (e) => {
 
 async function editMedicine(id) {
     try {
-        const { data } = await _supabase.from('medicine_inventory').select('*').eq('id', id).single();
-        if (!data) return;
+        if (!currentUser) return;
+        const { data, error } = await _supabase
+            .from('medicine_inventory')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', currentUser.id)
+            .single();
+            
+        if (error || !data) throw error || new Error('데이터를 찾을 수 없습니다.');
 
         const isEmergency = data.category && data.category !== '처방약';
         openAddModal(isEmergency ? 'emergency' : 'prescription');
@@ -406,8 +418,8 @@ async function editMedicine(id) {
             document.getElementById('stock_quantity').value = data.stock_quantity || '';
             document.getElementById('unit').value = data.unit || '정';
         } else {
-            if (data.entp_name && data.entp_name.includes('|')) {
-                const [times, timing] = data.entp_name.split(' | ');
+            if (data.taking_info && data.taking_info.includes('|')) {
+                const [times, timing] = data.taking_info.split(' | ');
                 const timeArray = times.split(', ');
                 document.querySelectorAll('#take-time-group .chip').forEach(c => {
                     if (timeArray.includes(c.dataset.value)) c.classList.add('selected');
@@ -420,9 +432,9 @@ async function editMedicine(id) {
             const detailList = document.getElementById('medicine-detail-list');
             if (detailList) {
                 detailList.innerHTML = '';
-                if (data.item_seq) {
+                if (data.medication_details) {
                     try {
-                        const items = typeof data.item_seq === 'string' ? JSON.parse(data.item_seq) : data.item_seq;
+                        const items = typeof data.medication_details === 'string' ? JSON.parse(data.medication_details) : data.medication_details;
                         if (Array.isArray(items)) {
                             items.forEach(item => addDetailRow(item));
                         }
@@ -438,11 +450,18 @@ async function editMedicine(id) {
 async function deleteMedicine(id) {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-        const { error } = await _supabase.from('medicine_inventory').delete().eq('id', id);
+        if (!currentUser) return;
+        const { error } = await _supabase
+            .from('medicine_inventory')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', currentUser.id);
+            
         if (error) throw error;
         showToast('삭제되었습니다.');
         loadInventory();
     } catch (err) {
+        console.error('Delete medicine error:', err);
         alert('삭제 실패: ' + err.message);
     }
 }
@@ -475,9 +494,20 @@ async function openDosageModal(medId, medName, unit) {
 let allMedicines = [];
 async function openManualDosageModal() {
     currentDosageMode = 'manual';
+    if (!currentUser) return;
     document.getElementById('manual-medicine-select').style.display = 'block';
     
-    const { data: medicines } = await _supabase.from('medicine_inventory').select('id, item_name, unit, category').order('item_name');
+    const { data: medicines, error } = await _supabase
+        .from('medicine_inventory')
+        .select('id, item_name, unit, category')
+        .eq('user_id', currentUser.id)
+        .order('item_name');
+        
+    if (error) {
+        console.error('Fetch medicines error:', error);
+        return;
+    }
+    
     allMedicines = medicines || [];
     
     if (allMedicines.length === 0) {
@@ -537,11 +567,18 @@ document.getElementById('dosage-form').onsubmit = async (e) => {
         if (logError) throw logError;
 
         // 재고 차감
-        const { data: med } = await _supabase.from('medicine_inventory').select('stock_quantity').eq('id', medId).single();
+        const { data: med } = await _supabase
+            .from('medicine_inventory')
+            .select('stock_quantity')
+            .eq('id', medId)
+            .eq('user_id', currentUser.id)
+            .single();
+            
         if (med) {
             await _supabase.from('medicine_inventory')
                 .update({ stock_quantity: Math.max(0, med.stock_quantity - amount) })
-                .eq('id', medId);
+                .eq('id', medId)
+                .eq('user_id', currentUser.id);
         }
 
         showToast('복용 기록이 등록되었습니다!');
@@ -556,21 +593,33 @@ document.getElementById('dosage-form').onsubmit = async (e) => {
 async function deleteLog(id, medId, amount) {
     if (!confirm('복용 기록을 취소하시겠습니까? (재고가 복구됩니다)')) return;
     try {
-        const { error } = await _supabase.from('dosage_logs').delete().eq('id', id);
+        const { error } = await _supabase
+            .from('dosage_logs')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', currentUser.id);
         if (error) throw error;
 
         // 재고 복구
-        const { data: med } = await _supabase.from('medicine_inventory').select('stock_quantity').eq('id', medId).single();
+        const { data: med } = await _supabase
+            .from('medicine_inventory')
+            .select('stock_quantity')
+            .eq('id', medId)
+            .eq('user_id', currentUser.id)
+            .single();
+            
         if (med) {
             await _supabase.from('medicine_inventory')
                 .update({ stock_quantity: med.stock_quantity + amount })
-                .eq('id', medId);
+                .eq('id', medId)
+                .eq('user_id', currentUser.id);
         }
 
         showToast('기록이 삭제되었습니다.');
         loadInventory();
         loadDailyLogs();
     } catch (err) {
+        console.error('Delete log error:', err);
         alert('삭제 실패: ' + err.message);
     }
 }
