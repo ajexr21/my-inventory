@@ -906,14 +906,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 12. 직접 입력 로직
     let manualBookData = null; // ISBN 검색 결과 임시 저장
+    let selectedImageFile = null; // 선택된 이미지 파일
+
+    const manualImageInput = document.getElementById('manual-image-input');
+    const imagePreview = document.getElementById('manual-image-preview');
+    const imagePlaceholder = document.getElementById('image-upload-placeholder');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
 
     manualInputBtn.addEventListener('click', () => {
         manualBookData = null;
+        selectedImageFile = null;
         document.getElementById('manual-isbn').value = '';
         document.getElementById('manual-title').value = '';
         document.getElementById('manual-author').value = '';
+        
+        // 이미지 초기화
+        manualImageInput.value = '';
+        imagePreview.src = '';
+        imagePreview.classList.add('hidden');
+        imagePlaceholder.classList.remove('hidden');
+        
         window.openModal(manualModal);
     });
+
+    // 이미지 첨부 영역 클릭
+    imagePreviewContainer.addEventListener('click', () => manualImageInput.click());
+
+    // 이미지 선택 시 프리뷰
+    manualImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            selectedImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                imagePlaceholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Supabase Storage 이미지 업로드 함수
+    async function uploadBookCover(file) {
+        try {
+            if (!_supabase || !file) return null;
+            
+            // 파일명 생성 (중복 방지)
+            const fileExt = file.name.split('.').pop();
+            const fileName = `book_${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `covers/${fileName}`;
+
+            // 업로드
+            const { data, error } = await _supabase.storage
+                .from('library')
+                .upload(filePath, file);
+
+            if (error) {
+                console.error('Storage 업로드 에러:', error);
+                // 버킷이 없는 경우 등에 대한 안내
+                if (error.message.includes('bucket not found')) {
+                    throw new Error("'library' 버킷을 찾을 수 없습니다. Supabase 설정을 확인해주세요.");
+                }
+                return null;
+            }
+
+            // Public URL 가져오기
+            const { data: { publicUrl } } = _supabase.storage
+                .from('library')
+                .getPublicUrl(filePath);
+
+            return publicUrl;
+        } catch (err) {
+            console.error('이미지 업로드 실패:', err);
+            return null;
+        }
+    }
 
     // ISBN으로 정보 가져오기 버튼
     document.getElementById('fetch-isbn-btn').addEventListener('click', async () => {
@@ -938,13 +1006,30 @@ document.addEventListener('DOMContentLoaded', () => {
             await window.customAlert("책 이름을 알려주세요!", "입력 확인");
             return;
         }
+
+        window.showLoading();
+        window.updateLoadingMsg("책을 책장에 넣는 중... ✨");
+
+        let coverUrl = '';
         
-        const bookData = manualBookData || {
+        // 1. 이미지가 선택된 경우 업로드 먼저 진행
+        if (selectedImageFile) {
+            window.updateLoadingMsg("이미지를 안전하게 저장하고 있어요... 📸");
+            const uploadedUrl = await uploadBookCover(selectedImageFile);
+            if (uploadedUrl) {
+                coverUrl = uploadedUrl;
+            } else if (selectedImageFile) {
+                // 업로드 실패했지만 이미지가 있었던 경우 알림
+                console.warn("이미지 업로드 실패, 기본 정보로 저장합니다.");
+            }
+        }
+        
+        const bookData = {
             title: title,
             author: author || '작가 미상',
             isbn: isbn,
             status: 'reading',
-            cover_url: ''
+            cover_url: coverUrl || (manualBookData ? manualBookData.cover_url : '')
         };
         
         // 수동 수정된 내용 반영
@@ -954,6 +1039,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await addNewBook(bookData);
         
+        window.hideLoading();
         window.closeModal(manualModal);
     });
 

@@ -149,14 +149,30 @@
                             <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; padding-left: 4px;">숫자를 입력하고 돋보기를 누르면 책 정보를 찾아와요!</p>
                         </div>
 
-                        <div class="input-group-premium">
-                            <label for="manual-title"><i class="fas fa-bookmark"></i> 책 제목</label>
-                            <input type="text" id="manual-title" placeholder="예: 구름빵, 달 샤베트" autocomplete="off">
+                        <div class="input-row">
+                            <div class="input-group-premium">
+                                <label for="manual-title"><i class="fas fa-bookmark"></i> 책 제목</label>
+                                <input type="text" id="manual-title" placeholder="예: 구름빵, 달 샤베트" autocomplete="off">
+                            </div>
+                            
+                            <div class="input-group-premium">
+                                <label for="manual-author"><i class="fas fa-pen-nib"></i> 글쓴이</label>
+                                <input type="text" id="manual-author" placeholder="예: 백희나 작가님" autocomplete="off">
+                            </div>
                         </div>
-                        
+
                         <div class="input-group-premium">
-                            <label for="manual-author"><i class="fas fa-pen-nib"></i> 글쓴이</label>
-                            <input type="text" id="manual-author" placeholder="예: 백희나 작가님" autocomplete="off">
+                            <label><i class="fas fa-image"></i> 책 이미지</label>
+                            <div class="image-upload-wrapper">
+                                <input type="file" id="manual-image-input" accept="image/*" hidden>
+                                <div id="image-preview-container" class="image-preview-container">
+                                    <img id="manual-image-preview" src="" alt="책 표지 미리보기" class="hidden">
+                                    <div id="image-upload-placeholder" class="image-upload-placeholder">
+                                        <i class="fas fa-camera"></i>
+                                        <span>사진을 찍거나 앨범에서 선택해주세요</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
