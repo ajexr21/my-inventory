@@ -68,13 +68,12 @@ header {
     background: var(--bg-color) !important;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 110;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: none !important;
-    border: none !important;
-    box-shadow: none !important;
+    backdrop-filter: blur(10px); /* 블러 추가하여 겹침 시 시인성 확보 */
+    border-bottom: 1px solid var(--border-color) !important;
 }
 
 
@@ -166,7 +165,8 @@ header {
     background: var(--bg-color) !important;
     position: sticky;
     top: calc(155px + env(safe-area-inset-top)); /* 타이틀 바 위치 하향 조정 */
-    z-index: 88;
+    z-index: 95;
+    background: var(--bg-color) !important;
 }
 
 
@@ -271,8 +271,9 @@ header {
     box-shadow: none;
     position: sticky;
     top: calc(75px + env(safe-area-inset-top)); /* 헤더 로고를 가리지 않도록 더 아래로 */
-    z-index: 90;
+    z-index: 100;
     margin-bottom: 0; /* 마진 제거하여 빈틈 차단 */
+    border-bottom: 1px solid var(--border-color);
 }
 
 
@@ -368,6 +369,8 @@ header {
     display: flex;
     gap: 10px;
 }
+
+.filter-bar {
     margin-bottom: 20px;
     overflow-x: auto;
 }
@@ -407,14 +410,11 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: fadeInUp 0.5s ease-out backwards;
 }
 
 .medicine-card:hover {
-    transform: translateY(-4px) scale(1.01);
     border-color: var(--primary);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes fadeInUp {
@@ -462,7 +462,7 @@ header {
 
 .log-card {
     background: var(--card-bg);
-    border-radius: 20px;
+    border-radius: var(--radius-md);
     padding: 18px 20px;
     margin-bottom: 12px;
     border: 1px solid var(--border-color);
@@ -471,7 +471,10 @@ header {
     align-items: center;
     position: relative;
     box-shadow: var(--shadow);
-    transition: transform 0.2s;
+}
+
+.log-card:hover {
+    border-color: var(--primary);
 }
 
 .log-card:active {
@@ -505,6 +508,19 @@ header {
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+}
+
+.action-btn.delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.1);
+}
+
+.action-btn.delete:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
 }
 
 .action-btn.take {
@@ -568,16 +584,7 @@ header {
     padding: 0 20px;
 }
 
-.log-card {
-    background: var(--card-bg);
-    border-radius: var(--radius-md);
-    padding: 18px;
-    border: 1px solid var(--border-color);
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+
 
 .log-info h4 {
     font-size: 0.95rem;
@@ -599,7 +606,7 @@ header {
 .date-separator {
     position: sticky;
     top: calc(215px + env(safe-area-inset-top)); /* 날짜 구분선 위치 하향 조정 */
-    z-index: 85;
+    z-index: 90;
     background: var(--bg-color);
     padding: 15px 20px 10px;
     margin: 0; /* 마이너스 마진 제거 */

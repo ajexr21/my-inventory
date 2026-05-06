@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
     <script src="../config.js?v=1.7.5"></script>
-    <link rel="stylesheet" href="style.css?v=1.7.5">
+    <link rel="stylesheet" href="style.css?v=1.7.6">
 </head>
 
 <body>
@@ -55,7 +55,7 @@
         <!-- 탭 콘텐츠: 처방 약장 -->
         <main id="tab-inventory" class="tab-content">
             <div class="section-header">
-                <h2>처방 약장 <span class="count" id="total-medicine-count">0</span></h2>
+                <h2>처방약 목록</h2>
                 <button class="add-btn" onclick="openAddModal()">
                     <i class="fas fa-plus"></i> 추가하기
                 </button>
@@ -287,7 +287,7 @@
     <div id="confirm-modal" class="modal">
         <div class="modal-content confirm-modal-content" style="max-width: 320px; text-align: center; padding: 30px; border-radius: 28px;">
             <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 15px;">
-                <i class="fas fa-exclamation-circle"></i>
+                <i class="fas fa-circle-xmark"></i>
             </div>
             <h3 id="confirm-title" style="margin-bottom: 10px; font-weight: 800; font-size: 1.25rem;">정말 삭제할까요?</h3>
             <p id="confirm-message" style="margin-bottom: 25px; opacity: 0.7; line-height: 1.5; font-size: 0.95rem; word-break: keep-all;"></p>
@@ -308,7 +308,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.7.5"></script>
+    <script src="script.js?v=1.7.6"></script>
 </body>
 
 </html>

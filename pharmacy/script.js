@@ -114,8 +114,6 @@ function renderInventory(items) {
     if (!items || items.length === 0) {
         medicineList.innerHTML = '<p class="empty-state">등록된 약이 없습니다.</p>';
         if (emergencyList) emergencyList.innerHTML = '<p class="empty-state">등록된 상비약이 없습니다.</p>';
-        const countEl = document.getElementById('total-medicine-count');
-        if (countEl) countEl.innerText = '0';
         return;
     }
 
@@ -157,7 +155,7 @@ function renderInventory(items) {
             <div class="med-actions">
                 <button class="action-btn take" onclick="openDosageModal('${item.id}', '${item.item_name}', '${item.unit || '회분'}')">체크하기</button>
                 <button class="action-btn" onclick="editMedicine('${item.id}')" title="수정"><i class="fas fa-edit"></i></button>
-                <button class="action-btn" onclick="deleteMedicine('${item.id}')" title="삭제"><i class="fas fa-trash"></i></button>
+                <button class="action-btn delete" onclick="deleteMedicine('${item.id}')" title="삭제"><i class="fas fa-circle-xmark"></i></button>
             </div>
         `;
         
@@ -179,8 +177,6 @@ function renderInventory(items) {
         emergencyList.innerHTML = '<p class="empty-state">등록된 상비약이 없습니다.</p>';
     }
 
-    const totalCountEl = document.getElementById('total-medicine-count');
-    if (totalCountEl) totalCountEl.innerText = prescriptionCount;
 }
 
 // 복용 기록 및 대시보드 업데이트 (통합 쿼리)
@@ -268,7 +264,7 @@ async function loadDailyLogs() {
                 </div>
                 <div class="log-actions" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                     <button class="delete-log-btn" onclick="deleteLog('${log.id}', '${log.medicine_id}', ${log.dosage_amount})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0 0 5px 10px; opacity: 0.6; transition: opacity 0.2s;">
-                        <i class="fas fa-minus-circle"></i>
+                        <i class="fas fa-circle-xmark"></i>
                     </button>
                     <span class="log-time" style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.05);">${timeStr}</span>
                 </div>
@@ -344,6 +340,43 @@ function removeDetailRow(btn) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+}
+
+// 공용 확인 모달 (Promise 기반)
+function showConfirmModal(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const okBtn = document.getElementById('confirm-ok');
+        const cancelBtn = document.getElementById('confirm-cancel');
+
+        if (!modal || !okBtn || !cancelBtn) {
+            resolve(confirm(message)); // 폴백
+            return;
+        }
+
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        modal.classList.add('active');
+
+        const onOk = () => {
+            cleanup();
+            resolve(true);
+        };
+        const onCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+        const cleanup = () => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+        };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+    });
 }
 
 // 칩 선택 로직 (이벤트 위임 활용)
@@ -476,7 +509,8 @@ async function editMedicine(id) {
 }
 
 async function deleteMedicine(id) {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    const confirmed = await showConfirmModal('정말 삭제할까요?', '약 정보를 삭제하면 복구할 수 없습니다.');
+    if (!confirmed) return;
     try {
         if (!currentUser) return;
         const { error } = await _supabase
@@ -619,7 +653,8 @@ document.getElementById('dosage-form').onsubmit = async (e) => {
 };
 
 async function deleteLog(id, medId, amount) {
-    if (!confirm('복용 기록을 취소하시겠습니까? (재고가 복구됩니다)')) return;
+    const confirmed = await showConfirmModal('기록을 취소할까요?', '복용 기록을 취소하면 재고가 자동으로 복구됩니다.');
+    if (!confirmed) return;
     try {
         const { error } = await _supabase
             .from('dosage_logs')
