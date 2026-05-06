@@ -1219,7 +1219,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
     let touchStart = 0;
     let touchMove = 0;
-    const ptrIndicator = document.getElementById('ptr-indicator');
     const threshold = 120;
 
     window.addEventListener('touchstart', (e) => {
@@ -1229,6 +1228,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('touchmove', (e) => {
         if (touchStart === 0) return;
+        const ptrIndicator = document.getElementById('ptr-indicator');
+        if (!ptrIndicator) return;
+
         touchMove = e.touches[0].screenY;
         const distance = touchMove - touchStart;
         if (distance > 0 && window.scrollY <= 1) {
@@ -1241,6 +1243,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
 
     window.addEventListener('touchend', () => {
+        const ptrIndicator = document.getElementById('ptr-indicator');
+        if (!ptrIndicator) return;
+
         const distance = touchMove - touchStart;
         if (distance > threshold && window.scrollY <= 1) {
             ptrIndicator.style.transform = `translateY(80px)`;
