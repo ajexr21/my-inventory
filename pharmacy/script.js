@@ -25,9 +25,8 @@ async function init() {
         initTheme();
         initTabs();
         
-        // 데이터 로드
-        await loadInventory();
-        await loadDailyLogs();
+        // 데이터 로드 (병렬 실행으로 로딩 속도 최적화)
+        await Promise.all([loadInventory(), loadDailyLogs()]);
         
     } catch (err) {
         console.error('App init error:', err);
@@ -190,11 +189,14 @@ async function loadDailyLogs() {
         if (!currentUser) return;
         const logsContainer = document.getElementById('dosage-logs-list');
         if (!logsContainer) return;
+        
+        logsContainer.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>기록을 불러오고 있어요...</p></div>';
 
-        // 최근 30일간의 기록을 가져옴 (그룹화를 위해 범위 확대)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        thirtyDaysAgo.setHours(0, 0, 0, 0);
+        // 최근 14일간의 기록을 가져옴 (데이터 로딩 최적화: 30일에서 14일로 단축)
+        const rangeDays = 14;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - rangeDays);
+        startDate.setHours(0, 0, 0, 0);
 
         const { data, error } = await _supabase
             .from('dosage_logs')
@@ -203,8 +205,9 @@ async function loadDailyLogs() {
                 medicine_inventory(item_name, unit, category)
             `)
             .eq('user_id', currentUser.id)
-            .gte('taken_at', thirtyDaysAgo.toISOString())
-            .order('taken_at', { ascending: false });
+            .gte('taken_at', startDate.toISOString())
+            .order('taken_at', { ascending: false })
+            .limit(100); // 최대 100건으로 제한하여 성능 확보
 
         if (error) throw error;
 
@@ -229,8 +232,10 @@ async function loadDailyLogs() {
 
         data.forEach(log => {
             const dateObj = new Date(log.taken_at);
-            const dateStr = dateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
-            const timeStr = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            // 요일 표시가 깨지는 문제 해결을 위한 포맷 수정
+            const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+            const dateStr = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${weekDays[dateObj.getDay()]})`;
+            const timeStr = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
             
             // 날짜 구분선 추가
             if (dateStr !== lastDate) {
