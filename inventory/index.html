@@ -7,7 +7,7 @@
     <title>우리집 편의점</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="style.css?v=1.2.1">
+    <link rel="stylesheet" href="style.css?v=1.5.0">
     <link
         href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -18,6 +18,11 @@
 </head>
 
 <body>
+    <div id="ptr-indicator" class="ptr-indicator">
+        <div class="ptr-spinner">
+            <i class="fas fa-sync-alt"></i>
+        </div>
+    </div>
     <div class="container">
         <header>
             <div class="header-top">
@@ -127,8 +132,8 @@
         </div>
     </div>
 
-    <script src="../config.js?v=1.1.0"></script>
-    <script src="script.js?v=1.2.1"></script>
+    <script src="../config.js?v=1.5.0"></script>
+    <script src="script.js?v=1.5.0"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('../sw.js')

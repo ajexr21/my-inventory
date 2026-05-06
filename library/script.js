@@ -1096,5 +1096,64 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeModal(manualModal);
     });
 
+    // --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
+    let touchStart = 0;
+    let touchMove = 0;
+    const ptrIndicator = document.getElementById('ptr-indicator');
+    const threshold = 120; // 새로고침이 실행될 당기기 거리
+
+    window.addEventListener('touchstart', (e) => {
+        // 페이지가 최상단에 있을 때만 시작
+        if (window.scrollY <= 1) {
+            touchStart = e.touches[0].screenY;
+        } else {
+            touchStart = 0;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (touchStart === 0) return;
+        
+        touchMove = e.touches[0].screenY;
+        const distance = touchMove - touchStart;
+
+        if (distance > 0 && window.scrollY <= 1) {
+            // 아래로 당기는 애니메이션 (저항감 효과)
+            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2;
+            ptrIndicator.style.transform = `translateY(${pull}px)`;
+            
+            // 임계값 도달 시 아이콘 회전
+            const icon = ptrIndicator.querySelector('i');
+            if (distance > threshold) {
+                icon.style.color = 'var(--accent-color)';
+                icon.style.filter = 'drop-shadow(0 0 8px var(--accent-color))';
+            } else {
+                icon.style.color = 'var(--primary-color)';
+                icon.style.filter = 'none';
+            }
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        const distance = touchMove - touchStart;
+        
+        if (distance > threshold && window.scrollY <= 1) {
+            // 새로고침 실행
+            ptrIndicator.style.transform = `translateY(80px)`;
+            // 진동 피드백 (지원하는 기기만)
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
+            
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 300);
+        } else {
+            // 취소: 원래 위치로 복구
+            ptrIndicator.style.transform = 'translateY(0)';
+        }
+        touchStart = 0;
+        touchMove = 0;
+    });
+
     initApp();
 });
+

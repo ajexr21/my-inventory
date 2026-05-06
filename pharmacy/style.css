@@ -4,7 +4,9 @@
     --secondary: #60A5FA; /* 맑은 블루 */
     --accent: #F472B6; /* 포인트 핑크 */
     --bg-color: #0F172A; /* 심해색 배경 */
+    --bg-rgb: 15, 23, 42;
     --card-bg: #1E293B; /* 다크 카드 배경 */
+    --card-bg-rgb: 30, 41, 59;
     --text-main: #F8FAFC;
     --text-muted: #94A3B8;
     --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -15,11 +17,17 @@
 
 [data-theme="light"] {
     --bg-color: #F8FAFC;
+    --bg-rgb: 248, 250, 252;
     --card-bg: #FFFFFF;
+    --card-bg-rgb: 255, 255, 255;
     --text-main: #1E293B;
     --text-muted: #64748B;
     --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     --border-color: rgba(0, 0, 0, 0.05);
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 * {
@@ -32,6 +40,9 @@
 
 body {
     background-color: var(--bg-color);
+    background-image: radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.05) 0%, transparent 50%),
+                      radial-gradient(circle at 100% 100%, rgba(96, 165, 250, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
     color: var(--text-main);
     line-height: 1.6;
     overflow-x: hidden;
@@ -51,14 +62,15 @@ body {
 /* --- App Header (우리집 표준) --- */
 header {
     padding: calc(20px + env(safe-area-inset-top)) 20px 15px;
-    background: var(--bg-color);
+    background: rgba(var(--bg-rgb), 0.7);
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .header-left {
@@ -215,13 +227,16 @@ header {
 /* --- Tab Navigation (Floating) --- */
 .main-tabs {
     display: flex;
-    background: rgba(30, 41, 59, 0.8);
-    backdrop-filter: blur(15px);
-    border-radius: 20px;
-    padding: 6px;
-    margin: 0 20px 25px;
+    background: rgba(var(--card-bg-rgb), 0.6);
+    backdrop-filter: blur(25px) saturate(180%);
+    border-radius: 24px;
+    padding: 8px;
+    margin: 0 20px 30px;
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    position: sticky;
+    top: 80px;
+    z-index: 90;
 }
 
 [data-theme="light"] .main-tabs {
@@ -262,6 +277,7 @@ header {
 
 .tab-content.active {
     display: block;
+    animation: fadeInUp 0.5s ease-out;
 }
 
 /* --- Content Headers --- */
@@ -339,18 +355,24 @@ header {
 .medicine-card {
     background: var(--card-bg);
     border-radius: var(--radius-md);
-    padding: 14px 20px;
+    padding: 18px 24px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: transform 0.2s, background 0.3s;
-    animation: slideIn 0.4s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.5s ease-out backwards;
 }
 
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(15px); }
+.medicine-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    border-color: var(--primary);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -577,14 +599,20 @@ header {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border-color);
     border: none;
-    color: white;
+    color: var(--text-main);
     font-size: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(45, 212, 191, 0.2);
+    color: var(--primary);
 }
 
 /* --- Form Elements --- */
@@ -914,3 +942,42 @@ header {
     font-family: 'Pretendard';
     src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/pretendard@v1.3.8/dist/web/static/pretendard.css');
 }
+
+/* --- Pull to Refresh Indicator --- */
+.ptr-indicator {
+    position: fixed;
+    top: -60px;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ptr-spinner {
+    width: 32px;
+    height: 32px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+}
+
+.ptr-spinner i {
+    font-size: 1.1rem;
+    color: var(--primary);
+    animation: ptr-rotate 1s linear infinite;
+}
+
+@keyframes ptr-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+

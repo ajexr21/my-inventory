@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualRoundInput = document.getElementById('manual-round');
     const selectedCountEl = document.getElementById('selected-count');
     const selectedPreviewEl = document.getElementById('selected-balls-preview');
-    
+
     // Winning Result UI Elements
     const editWinBtn = document.getElementById('edit-win-btn');
     const winModal = document.getElementById('win-modal');
@@ -52,10 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             _supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
             
-            // 세션 체크 추가
+            // 세션 체크
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) {
-                window.location.href = '../login.html';
+                // 세션이 없어도 일단 로컬 데이터로 렌더링 시도 (오프라인/임시 사용 지원)
+                lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+                renderLottoList();
                 return;
             }
 
@@ -69,14 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .subscribe();
         } catch (e) {
-            console.error("Supabase 초기화 실패, 로컬 모드로 동작합니다:", e);
+            console.error("Supabase 초기화 실패, 로컬 모드로 시작합니다.", e);
             lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
             renderLottoList();
         }
     }
 
     async function loadLottoData() {
-        if (!_supabase) return;
+        if (!_supabase) {
+            lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
+            renderLottoList();
+            return;
+        }
+
         const { data, error } = await _supabase
             .from('lotto_tickets')
             .select('*')
@@ -84,13 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!error) {
             lottoData = data;
-            // 로컬 스토리지도 백업용으로 업데이트
             localStorage.setItem('myLottoData', JSON.stringify(lottoData));
             
-            // 등록된 모든 회차의 당첨 번호 조회 시작
+            // 등록된 회차 당첨 번호 조회
             const rounds = [...new Set(lottoData.map(t => t.round))];
             rounds.forEach(r => fetchWinningNumbersForRound(r));
             
+            renderLottoList();
+        } else {
+            console.error("Lotto data load error:", error);
+            // 에러 시에도 로컬 데이터는 보여줌
+            lottoData = JSON.parse(localStorage.getItem('myLottoData')) || [];
             renderLottoList();
         }
     }
@@ -99,11 +110,11 @@ document.addEventListener('DOMContentLoaded', () => {
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.getAttribute('data-target');
-            
+
             // 탭 UI 업데이트
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             // 콘텐츠 업데이트
             tabContents.forEach(content => {
                 content.classList.remove('active');
@@ -151,10 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!html5QrcodeScanner) {
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
         }
-        
+
         // 카메라 설정 최적화 (초점 문제 해결을 위해 강제 매크로 제거 및 영역 확대)
-        const config = { 
-            fps: 20, 
+        const config = {
+            fps: 20,
             qrbox: { width: 220, height: 220 }, // 창 크기에 맞춰 콤팩트하게 조정
             aspectRatio: 1.0,
             videoConstraints: {
@@ -164,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 focusMode: "continuous"
             }
         };
-        
+
         html5QrcodeScanner.start(
             { facingMode: "environment" },
             config,
@@ -238,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openManualModal() {
         openModal(manualModal);
-        
+
         // 최신 회차 자동 입력 (데이터가 있으면 그 회차, 없으면 기본값)
         const latestRoundMatch = document.getElementById('latest-round-title')?.textContent;
         if (latestRoundMatch && !isNaN(parseInt(latestRoundMatch))) {
@@ -294,14 +305,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         selectedCountEl.textContent = selectedNumbers.length;
         modalConfirmBtn.disabled = !(selectedNumbers.length === 6 && manualRoundInput.value);
-        
+
         // 버튼 스타일 실시간 반영 (disabled 상태일 때 시각적 피드백)
         if (modalConfirmBtn.disabled) {
             modalConfirmBtn.style.opacity = '0.5';
         } else {
             modalConfirmBtn.style.opacity = '1';
         }
-        
+
         // 미리보기 렌더링
         selectedPreviewEl.innerHTML = '';
         selectedNumbers.sort((a, b) => a - b).forEach(num => {
@@ -346,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function openWinModal() {
         openModal(winModal);
         goToWinStep(1);
-        
+
         // 현재 표시된 회차 또는 최신 계산 회차 자동 입력
         const latestRoundMatch = document.getElementById('latest-round-title')?.textContent;
         let currentRound;
@@ -356,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRound = getLatestRound();
         }
         winRoundInput.value = currentRound;
-        
+
         loadWinResultForRound(currentRound);
     }
 
@@ -368,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedWinNumbers = [];
             selectedBonusNumber = null;
         }
-        
+
         renderWinNumberGrid();
         // 보너스 선택 단계라면 보너스 그리드도 재렌더링 (비활성 번호 갱신)
         if (!winStep2.classList.contains('hidden')) {
@@ -427,13 +438,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const rangeClass = `range-${Math.ceil(i / 10)}`;
             numBtn.className = `grid-num ${rangeClass}`;
             numBtn.textContent = i;
-            
+
             if (selectedWinNumbers.includes(i)) {
                 // 당첨 번호로 이미 선택된 번호는 선택된 상태로 유지하되 X 표시
-                numBtn.classList.add('selected', `selected-${Math.ceil(i/10)}`, 'disabled');
+                numBtn.classList.add('selected', `selected-${Math.ceil(i / 10)}`, 'disabled');
                 numBtn.style.pointerEvents = 'none';
             } else {
-                if (selectedBonusNumber === i) numBtn.classList.add('selected', `selected-${Math.ceil(i/10)}`);
+                if (selectedBonusNumber === i) numBtn.classList.add('selected', `selected-${Math.ceil(i / 10)}`);
                 numBtn.addEventListener('click', () => {
                     selectedBonusNumber = i;
                     updateWinModalUI();
@@ -461,18 +472,18 @@ document.addEventListener('DOMContentLoaded', () => {
         allBonusNums.forEach(btn => {
             const num = parseInt(btn.textContent, 10);
             btn.classList.remove('selected', 'selected-1', 'selected-2', 'selected-3', 'selected-4', 'selected-5');
-            
+
             // 보너스 번호로 선택되었거나, 이미 당첨 번호로 선택된 경우
             if (selectedBonusNumber === num || selectedWinNumbers.includes(num)) {
                 btn.classList.add('selected');
                 btn.classList.add(`selected-${Math.ceil(num / 10)}`);
             }
         });
-        
+
         // 버튼 활성화 로직
         winNextBtn.disabled = (selectedWinNumbers.length !== 6);
         winModalConfirmBtn.disabled = !(selectedWinNumbers.length === 6 && selectedBonusNumber && winRoundInput.value);
-        
+
         // 미리보기 렌더링
         winBallsPreviewEl.innerHTML = '';
         selectedWinNumbers.sort((a, b) => a - b).forEach(num => {
@@ -481,14 +492,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ball.textContent = num;
             winBallsPreviewEl.appendChild(ball);
         });
-        
+
         if (selectedBonusNumber) {
             const plus = document.createElement('div');
             plus.style.display = 'flex';
             plus.style.alignItems = 'center';
             plus.textContent = '+';
             winBallsPreviewEl.appendChild(plus);
-            
+
             const ball = document.createElement('div');
             ball.className = `number-ball ball-${Math.ceil(selectedBonusNumber / 10)}`;
             ball.textContent = selectedBonusNumber;
@@ -514,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (_supabase) {
                 await _supabase.from('lotto_results').upsert(resultData);
             }
-            
+
             // 로컬 캐시 업데이트
             winningNumbersCache[round] = {
                 numbers: resultData.numbers,
@@ -522,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: resultData.draw_date
             };
             saveData();
-            
+
             setTimeout(() => {
                 closeWinModal();
                 winModalConfirmBtn.innerHTML = '저장하기';
@@ -541,8 +552,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Scanned QR:", decodedText);
         // 동행복권 QR URL 파싱 로직 (더 유연하게)
         if (decodedText.includes('?v=') || decodedText.includes('v=')) {
-            stopScanner(); 
-            
+            stopScanner();
+
             let vData = '';
             if (decodedText.includes('v=')) {
                 vData = decodedText.split('v=')[1].split('&')[0];
@@ -567,15 +578,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const round = parseInt(roundMatch[1], 10);
                 const games = [];
-                
+
                 // vData에서 12자리 숫자(로또 번호 6개) 패턴을 모두 찾음
                 const gameMatches = vData.match(/\d{12}/g);
-                
+
                 if (gameMatches) {
                     gameMatches.forEach(gameStr => {
                         // 첫 번째 매치가 회차 번호를 포함한 일부일 수 있으므로 검증
                         // (보통 회차는 4자리이므로 12자리 숫자 세트와 확연히 구분됨)
-                        if (gameStr !== roundMatch[1].padEnd(12, '0')) { 
+                        if (gameStr !== roundMatch[1].padEnd(12, '0')) {
                             const nums = [];
                             for (let j = 0; j < 12; j += 2) {
                                 const num = parseInt(gameStr.substring(j, j + 2), 10);
@@ -625,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         lottoData.unshift(newTicket);
-        
+
         // DB 저장 (Supabase)
         if (_supabase) {
             const dbData = {
@@ -634,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 games: newTicket.games,
                 created_at: new Date().toISOString()
             };
-            _supabase.from('lotto_tickets').insert([dbData]).then(({error}) => {
+            _supabase.from('lotto_tickets').insert([dbData]).then(({ error }) => {
                 if (error) console.error("DB 저장 실패:", error);
             });
         }
@@ -651,9 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function deleteTicket(id) {
         const ok = await customConfirm("이 로또 내역을 삭제하시겠습니까?");
-        if(ok) {
+        if (ok) {
             lottoData = lottoData.filter(t => t.id !== id);
-            
+
             // DB 삭제
             if (_supabase) {
                 const { error } = await _supabase.from('lotto_tickets').delete().eq('id', id);
@@ -664,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderLottoList();
         }
     }
-    
+
     // 전역으로 노출하여 HTML에서 호출 가능하도록
     window.deleteTicket = deleteTicket;
 
@@ -709,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. DB에 없으면 외부 API 호출
             const apiUrl = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${round}`;
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-            
+
             const response = await fetch(proxyUrl);
             const data = await response.json();
             const lottoResult = JSON.parse(data.contents);
@@ -751,11 +762,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     refreshBtn.addEventListener('click', () => {
         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 업데이트 중...';
-        
+
         // 유니크한 회차 목록 추출
         const rounds = [...new Set(lottoData.map(t => t.round))];
         const promises = rounds.map(r => fetchWinningNumbersForRound(r));
-        
+
         Promise.all(promises).then(() => {
             setTimeout(() => {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 최신 당첨결과 업데이트';
@@ -819,7 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ticket.games.slice(0, 5).forEach((game, index) => {
                 totalGamesCount++;
                 const labels = ['A', 'B', 'C', 'D', 'E'];
-                
+
                 let resultObj = null;
                 if (winInfo) {
                     resultObj = checkRank(game, winInfo.numbers, winInfo.bonus);
@@ -833,7 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 game.forEach(num => {
                     let isMatched = false;
                     let isBonusMatched = false;
-                    
+
                     if (winInfo) {
                         isMatched = winInfo.numbers.includes(num);
                         isBonusMatched = (!isMatched && winInfo.bonus === num);
@@ -842,18 +853,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const bgColor = getBallColorHex(num);
                     const matchedClass = (isMatched || isBonusMatched) ? 'matched' : '';
                     const inlineStyle = (isMatched || isBonusMatched) ? `background-color: ${bgColor};` : `background-color: ${bgColor}; opacity: ${winInfo ? 0.3 : 1};`;
-                    
+
                     gameHtml += `<div class="number-ball ${matchedClass}" style="${inlineStyle}">${num}</div>`;
                 });
 
                 gameHtml += `</div>
                     <div class="game-result ${resultObj ? resultObj.class : ''}">
-                        ${resultObj && resultObj.rank > 0 
-                            ? `<div class="rank-badge" style="color: ${resultObj.color};">
+                        ${resultObj && resultObj.rank > 0
+                        ? `<div class="rank-badge" style="color: ${resultObj.color};">
                                 <i class="fas fa-certificate badge-icon"></i>
                                 <span class="badge-num">${resultObj.text}</span>
-                               </div>` 
-                            : `<span style="color: ${resultObj ? resultObj.color : '#999'};">${resultObj ? resultObj.text : ''}</span>`}
+                               </div>`
+                        : `<span style="color: ${resultObj ? resultObj.color : '#999'};">${resultObj ? resultObj.text : ''}</span>`}
                     </div>
                 </div>`;
 
@@ -875,11 +886,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const diffTime = Math.abs(today - firstDrawDate);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         let round = Math.floor(diffDays / 7) + 1;
-        
+
         const day = today.getDay(); // 0(일)~6(토)
         const hours = today.getHours();
         const minutes = today.getMinutes();
-        
+
         // 토요일 20:45분 추첨 결과 발표 전까지는 이전 회차를 최신으로 간주
         // (기존 day < 6 조건이 일요일~금요일까지 모두 감소시켜버리는 버그가 있어 수정함)
         if (day === 6 && (hours < 20 || (hours === 20 && minutes < 45))) {
@@ -895,9 +906,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateEl = document.getElementById('latest-date');
 
         if (!roundTitleEl || !container) return;
+        
+        // 초기 로딩 상태 표시
+        container.innerHTML = '<div style="grid-column: span 7; padding: 10px; opacity: 0.5;"><i class="fas fa-spinner fa-spin"></i> 분석 중...</div>';
 
-        async function tryFetchSigLotto(round, attempt = 0) {
-            // 1. 먼저 DB/캐시에 데이터가 있는지 확인 (사용자가 직접 입력했을 수 있음)
+        async function tryFetchResult(round, attempt = 0) {
+            // 1. 캐시 확인
             if (winningNumbersCache[round]) {
                 const cache = winningNumbersCache[round];
                 renderFormattedNumbers({
@@ -909,55 +923,86 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (attempt > 2) { // 3회 시도 후 종료 (최신 -> 이전 -> 이전)
-                container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">당첨 정보를 가져올 수 없습니다.</p>';
+            if (attempt > 3) {
+                container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">추첨 정보를 가져올 수 없습니다.</p>';
                 return;
             }
 
             try {
-                // 시그로또 공개 API (CORS 문제 없음)
-                const apiUrl = `https://www.siglotto.kr/api/public/v1/winning/${round}`;
-                const response = await fetch(apiUrl, { signal: AbortSignal.timeout(4000) });
+                // 시도 1: 시그로또 API
+                const sigUrl = `https://www.siglotto.kr/api/public/v1/winning/${round}`;
+                const sigResponse = await fetch(sigUrl, { signal: AbortSignal.timeout(3500) });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (sigResponse.ok) {
+                    const data = await sigResponse.json();
+                    if (data && data.status === "success") {
+                        const result = {
+                            draw_no: data.round,
+                            draw_date: "최신", 
+                            numbers: data.numbers,
+                            bonus: data.bonus
+                        };
+                        renderFormattedNumbers(result, container, dateEl, roundTitleEl);
+                        return;
+                    }
                 }
                 
-                const data = await response.json();
+                // 시도 2: 동행복권 API (AllOrigins Proxy)
+                const dhUrl = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${round}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(dhUrl)}&timestamp=${Date.now()}`;
+                const dhResponse = await fetch(proxyUrl);
+                
+                if (dhResponse.ok) {
+                    const dhData = await dhResponse.json();
+                    if (dhData.contents) {
+                        const lottoResult = JSON.parse(dhData.contents);
+                        if (lottoResult && lottoResult.returnValue === "success") {
+                            const result = {
+                                draw_no: lottoResult.drwNo,
+                                draw_date: lottoResult.drwNoDate,
+                                numbers: [
+                                    lottoResult.drwtNo1, lottoResult.drwtNo2, lottoResult.drwtNo3,
+                                    lottoResult.drwtNo4, lottoResult.drwtNo5, lottoResult.drwtNo6
+                                ],
+                                bonus: lottoResult.bnusNo
+                            };
+                            
+                            winningNumbersCache[round] = {
+                                numbers: result.numbers,
+                                bonus: result.bonus,
+                                date: result.draw_date
+                            };
+                            saveData();
+                            renderFormattedNumbers(result, container, dateEl, roundTitleEl);
+                            return;
+                        }
+                    }
+                }
 
-                if (data && data.status === "success") {
-                    const result = {
-                        draw_no: data.round,
-                        draw_date: "최신", // 시그로또는 날짜를 주지 않으므로 대체 텍스트 사용
-                        numbers: data.numbers,
-                        bonus: data.bonus
-                    };
-                    renderFormattedNumbers(result, container, dateEl, roundTitleEl);
-                } else {
-                    await tryFetchSigLotto(round - 1, attempt + 1);
-                }
+                // 둘 다 실패하면 이전 회차 시도
+                await tryFetchResult(round - 1, attempt + 1);
             } catch (error) {
-                console.warn(`SigLotto API error for round ${round}, retrying...`);
-                await tryFetchSigLotto(round - 1, attempt + 1);
+                console.warn(`Fetch error for round ${round}, retrying...`, error);
+                await tryFetchResult(round - 1, attempt + 1);
             }
         }
 
-        await tryFetchSigLotto(initialRound);
+        await tryFetchResult(initialRound);
     }
 
     function renderFormattedNumbers(lottoResult, container, dateEl, roundTitleEl) {
         roundTitleEl.textContent = lottoResult.draw_no;
         container.innerHTML = '';
-        
+
         lottoResult.numbers.forEach(num => {
             const bgColor = getBallColorHex(num);
             container.innerHTML += `<div class="number-ball matched" style="background-color: ${bgColor};">${num}</div>`;
         });
-        
+
         container.innerHTML += `<div style="font-size: 18px; color: var(--text-muted); display: flex; align-items: center; margin: 0 5px;">+</div>`;
         const bonusColor = getBallColorHex(lottoResult.bonus);
         container.innerHTML += `<div class="number-ball matched" style="background-color: ${bonusColor};">${lottoResult.bonus}</div>`;
-        
+
         dateEl.textContent = lottoResult.draw_date === "최신" ? "추첨 완료" : `${lottoResult.draw_date} 추첨`;
     }
 
@@ -974,11 +1019,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const bgColor = getBallColorHex(num);
             container.innerHTML += `<div class="number-ball matched" style="background-color: ${bgColor};">${num}</div>`;
         });
-        
+
         container.innerHTML += `<div style="font-size: 18px; color: var(--text-muted); display: flex; align-items: center; margin: 0 5px;">+</div>`;
         const bonusColor = getBallColorHex(bonusNum);
         container.innerHTML += `<div class="number-ball matched" style="background-color: ${bonusColor};">${bonusNum}</div>`;
-        
+
         dateEl.textContent = `${lottoResult.drwNoDate} 추첨`;
     }
 
@@ -988,10 +1033,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateGemmaPicks() {
         if (!gemmaPicksContainer) return;
-        
+
         gemmaPicksContainer.innerHTML = '';
         const labels = ['A', 'B', 'C', 'D', 'E'];
-        
+
         for (let i = 0; i < 5; i++) {
             // 1~45 중 6개 랜덤 추출
             const numbers = [];
@@ -1002,18 +1047,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             numbers.sort((a, b) => a - b);
-            
+
             let gameHtml = `
                 <div class="game-row" style="background: rgba(255, 71, 87, 0.05); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255, 71, 87, 0.1); margin-bottom: 0; display: flex; justify-content: center; gap: 15px;">
                     <div class="game-label" style="font-weight: 800; color: var(--primary-color); width: auto; font-size: 16px;">${labels[i]}</div>
                     <div class="game-numbers" style="flex: none; justify-content: center; gap: 8px;">
             `;
-            
+
             numbers.forEach(num => {
                 const bgColor = getBallColorHex(num);
                 gameHtml += `<div class="number-ball matched" style="background-color: ${bgColor};">${num}</div>`;
             });
-            
+
             gameHtml += `</div></div>`;
             gemmaPicksContainer.insertAdjacentHTML('beforeend', gameHtml);
         }
@@ -1023,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshGemmaBtn.addEventListener('click', () => {
             refreshGemmaBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 행운 번호 분석 중...';
             refreshGemmaBtn.disabled = true;
-            
+
             setTimeout(() => {
                 generateGemmaPicks();
                 refreshGemmaBtn.innerHTML = '<i class="fas fa-magic"></i> 번호 다시 뽑기';
@@ -1045,11 +1090,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const url = 'https://www.dhlottery.co.kr/pt720/intro';
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`;
-            
+
             const response = await fetch(proxyUrl);
             const data = await response.json();
             const html = data.contents;
-            
+
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
@@ -1057,10 +1102,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const roundText = doc.querySelector('.win_result strong')?.innerText || "";
             const roundMatch = roundText.match(/\d+/);
             const round = roundMatch ? roundMatch[0] : "";
-            
+
             // 2. 날짜 정보 추출
             const dateText = doc.querySelector('.win_result .date')?.innerText || "";
-            
+
             // 3. 당첨 번호 추출 (1등)
             // 연금복권 번호는 .win720_num 또는 테이블 구조에 있음
             // 블로그 분석에 따르면 tbody tr의 첫번째 행에 1등 번호가 있음
@@ -1074,8 +1119,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // UI 렌더링
             roundTitleEl.textContent = `(${round}회)`;
-            dateEl.textContent = dateText.replace('(','').replace(')','');
-            
+            dateEl.textContent = dateText.replace('(', '').replace(')', '');
+
             const group = firstRankNums[0];
             const numbers = firstRankNums.slice(1);
 
@@ -1158,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             okBtn.addEventListener('click', onOk);
             cancelBtn.addEventListener('click', onCancel);
-            
+
             // 배경 클릭 시 취소 처리
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) onCancel();
@@ -1170,5 +1215,42 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLatestLottoResult();
     initLottoApp(); // DB 초기화 -> loadLottoData -> 각 회차 당첨 번호 조회 순으로 진행됨
     generateGemmaPicks(); // 초기 젬마 추천 생성
+
+    // --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
+    let touchStart = 0;
+    let touchMove = 0;
+    const ptrIndicator = document.getElementById('ptr-indicator');
+    const threshold = 120;
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY <= 1) touchStart = e.touches[0].screenY;
+        else touchStart = 0;
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (touchStart === 0) return;
+        touchMove = e.touches[0].screenY;
+        const distance = touchMove - touchStart;
+        if (distance > 0 && window.scrollY <= 1) {
+            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2;
+            ptrIndicator.style.transform = `translateY(${pull}px)`;
+            const icon = ptrIndicator.querySelector('i');
+            if (distance > threshold) icon.style.color = 'var(--secondary-color, #ee5253)';
+            else icon.style.color = 'var(--primary-color)';
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        const distance = touchMove - touchStart;
+        if (distance > threshold && window.scrollY <= 1) {
+            ptrIndicator.style.transform = `translateY(80px)`;
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
+            setTimeout(() => { window.location.reload(true); }, 300);
+        } else {
+            ptrIndicator.style.transform = 'translateY(0)';
+        }
+        touchStart = 0;
+        touchMove = 0;
+    });
 });
 

@@ -656,5 +656,43 @@ async function runOCR(image) {
     }
 }
 
+// --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
+let touchStart = 0;
+let touchMove = 0;
+const ptrIndicator = document.getElementById('ptr-indicator');
+const threshold = 120;
+
+window.addEventListener('touchstart', (e) => {
+    if (window.scrollY <= 1) touchStart = e.touches[0].screenY;
+    else touchStart = 0;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+    if (touchStart === 0) return;
+    touchMove = e.touches[0].screenY;
+    const distance = touchMove - touchStart;
+    if (distance > 0 && window.scrollY <= 1) {
+        const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2;
+        ptrIndicator.style.transform = `translateY(${pull}px)`;
+        const icon = ptrIndicator.querySelector('i');
+        if (distance > threshold) icon.style.color = 'var(--accent)';
+        else icon.style.color = 'var(--primary)';
+    }
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+    const distance = touchMove - touchStart;
+    if (distance > threshold && window.scrollY <= 1) {
+        ptrIndicator.style.transform = `translateY(80px)`;
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+        setTimeout(() => { window.location.reload(true); }, 300);
+    } else {
+        ptrIndicator.style.transform = 'translateY(0)';
+    }
+    touchStart = 0;
+    touchMove = 0;
+});
+
 // 앱 실행
 init();
+

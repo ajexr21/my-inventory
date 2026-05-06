@@ -12,7 +12,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=1.1.0"></script>
+    <script src="config.js?v=1.5.0"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -211,10 +211,53 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* --- Pull to Refresh Indicator --- */
+        .ptr-indicator {
+            position: fixed;
+            top: -60px;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            pointer-events: none;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ptr-spinner {
+            width: 32px;
+            height: 32px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid var(--border, rgba(0,0,0,0.05));
+        }
+
+        .ptr-spinner i {
+            font-size: 1.1rem;
+            color: var(--primary);
+            animation: ptr-rotate 1s linear infinite;
+        }
+
+        @keyframes ptr-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
 <body>
+    <div id="ptr-indicator" class="ptr-indicator">
+        <div class="ptr-spinner">
+            <i class="fas fa-sync-alt"></i>
+        </div>
+    </div>
     <div class="container">
         <header>
             <div class="logo">Smart Home Hub</div>
@@ -752,6 +795,43 @@
                     .catch(err => console.log('SW registration failed', err));
             });
         }
+
+        // --- Pull to Refresh 로직 ---
+        let touchStart = 0;
+        let touchMove = 0;
+        const ptrIndicator = document.getElementById('ptr-indicator');
+        const threshold = 120;
+
+        window.addEventListener('touchstart', (e) => {
+            if (window.scrollY <= 1) touchStart = e.touches[0].screenY;
+            else touchStart = 0;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (touchStart === 0) return;
+            touchMove = e.touches[0].screenY;
+            const distance = touchMove - touchStart;
+            if (distance > 0 && window.scrollY <= 1) {
+                const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2;
+                ptrIndicator.style.transform = `translateY(${pull}px)`;
+                const icon = ptrIndicator.querySelector('i');
+                if (distance > threshold) icon.style.color = 'var(--secondary)';
+                else icon.style.color = 'var(--primary)';
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            const distance = touchMove - touchStart;
+            if (distance > threshold && window.scrollY <= 1) {
+                ptrIndicator.style.transform = `translateY(80px)`;
+                if (window.navigator.vibrate) window.navigator.vibrate(50);
+                setTimeout(() => { window.location.reload(true); }, 300);
+            } else {
+                ptrIndicator.style.transform = 'translateY(0)';
+            }
+            touchStart = 0;
+            touchMove = 0;
+        });
     </script>
 </body>
 
