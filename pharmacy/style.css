@@ -53,7 +53,9 @@ body {
 .container {
     max-width: 800px;
     margin: 0 auto;
+    padding: 0;
     min-height: 100vh;
+    position: relative;
     display: flex;
     flex-direction: column;
     padding-bottom: calc(100px + env(safe-area-inset-bottom));
@@ -62,17 +64,21 @@ body {
 /* --- App Header (우리집 표준) --- */
 header {
     padding: calc(20px + env(safe-area-inset-top)) 20px 15px;
-    background: transparent !important; /* 배경 막대 제거 */
+    margin: 0; /* 마이너스 마진 제거 */
+    background: var(--bg-color) !important;
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: none !important; /* 블러 효과 제거 */
+    backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
 }
+
+
+
 
 
 
@@ -151,12 +157,23 @@ header {
     pointer-events: none;
 }
 
-.summary-header {
+.section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin: 0;
+    padding: 15px 20px;
+    background: var(--bg-color) !important;
+    position: sticky;
+    top: calc(155px + env(safe-area-inset-top)); /* 타이틀 바 위치 하향 조정 */
+    z-index: 88;
 }
+
+
+
+
+
+
 
 .summary-header h3 {
     font-size: 1rem;
@@ -172,11 +189,26 @@ header {
     font-weight: 500;
 }
 
+.inventory-list, .emergency-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    padding: 0 20px 30px; /* 좌우 패딩 추가 */
+}
+
 .family-status-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     margin-top: 10px;
+}
+
+.logs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 20px; /* 표준 여백 추가 */
+    padding-bottom: 30px;
 }
 
 .family-member {
@@ -231,17 +263,23 @@ header {
 /* --- Tab Navigation (Floating) --- */
 .main-tabs {
     display: flex;
-    background: rgba(var(--card-bg-rgb), 0.6);
-    backdrop-filter: blur(25px) saturate(180%);
-    border-radius: 24px;
-    padding: 8px;
-    margin: 0 20px 30px;
-    border: none; /* 사각틀 제거 */
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    background: var(--bg-color) !important;
+    backdrop-filter: none !important;
+    padding: 10px 20px; 
+    margin: 0 0 10px; /* 여백 축소 */
+    border: none;
+    box-shadow: none;
     position: sticky;
-    top: calc(75px + env(safe-area-inset-top)); /* 노치 높이를 자동으로 계산하여 대응 */
+    top: calc(75px + env(safe-area-inset-top)); /* 헤더 로고를 가리지 않도록 더 아래로 */
     z-index: 90;
+    margin-bottom: 0; /* 마진 제거하여 빈틈 차단 */
 }
+
+
+
+
+
+
 
 
 
@@ -325,10 +363,11 @@ header {
 .add-btn:active { transform: scale(0.95); }
 
 /* --- Filter Bar --- */
-.filter-bar {
-    padding: 0 20px;
+.search-box {
+    margin: 0 20px 20px; /* 좌우 여백 추가 */
     display: flex;
-    gap: 8px;
+    gap: 10px;
+}
     margin-bottom: 20px;
     overflow-x: auto;
 }
@@ -559,16 +598,17 @@ header {
 /* --- Date Separator (Grouped Logs) --- */
 .date-separator {
     position: sticky;
-    top: calc(145px + env(safe-area-inset-top)); /* main-tabs 아래에 동적 고정 */
+    top: calc(215px + env(safe-area-inset-top)); /* 날짜 구분선 위치 하향 조정 */
     z-index: 85;
-    background: transparent; /* 배경 투명화 */
-    padding: 25px 0 10px; /* 좌우 여백 제거 */
-    margin: 0; /* 컨테이너 확장 제거 */
+    background: var(--bg-color);
+    padding: 15px 20px 10px;
+    margin: 0; /* 마이너스 마진 제거 */
     display: flex;
     align-items: center;
     gap: 12px;
-    pointer-events: none; /* 클릭 방해 금지 */
 }
+
+
 
 .date-separator span {
     pointer-events: auto; /* 날짜 텍스트는 상호작용 가능하게 */

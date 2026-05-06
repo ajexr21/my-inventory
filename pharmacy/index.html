@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
-    <script src="../config.js?v=1.6.1"></script>
-    <link rel="stylesheet" href="style.css?v=1.6.1">
+    <script src="../config.js?v=1.7.5"></script>
+    <link rel="stylesheet" href="style.css?v=1.7.5">
 </head>
 
 <body>
@@ -54,7 +54,7 @@
 
         <!-- 탭 콘텐츠: 처방 약장 -->
         <main id="tab-inventory" class="tab-content">
-            <div class="content-header">
+            <div class="section-header">
                 <h2>처방 약장 <span class="count" id="total-medicine-count">0</span></h2>
                 <button class="add-btn" onclick="openAddModal()">
                     <i class="fas fa-plus"></i> 추가하기
@@ -71,7 +71,7 @@
 
         <!-- 탭 콘텐츠: 상비약 -->
         <main id="tab-emergency" class="tab-content">
-            <div class="content-header">
+            <div class="section-header">
                 <h2>상비약 목록</h2>
                 <button class="add-btn" onclick="openEmergencyAddModal()">
                     <i class="fas fa-plus"></i> 추가하기
@@ -84,8 +84,8 @@
 
         <!-- 탭 콘텐츠: 복용 기록 -->
         <main id="tab-logs" class="tab-content active">
-            <div class="content-header">
-                <h2>오늘의 복용 기록</h2>
+            <div class="section-header">
+                <h2>복용기록</h2>
                 <button class="add-btn" onclick="openManualDosageModal()">
                     <i class="fas fa-plus"></i> 기록추가
                 </button>
@@ -155,8 +155,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label style="display: flex; justify-content: space-between; align-items: center;">
-                            상세 약 리스트 (선택)
+                        <label>상세 약 리스트 (선택)
                             <button type="button" class="add-detail-btn" onclick="addDetailRow()" style="background: none; border: none; color: var(--primary); font-weight: 800; cursor: pointer; font-size: 0.8rem;">
                                 <i class="fas fa-plus-circle"></i> 약품 추가
                             </button>
@@ -306,7 +305,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.6.1"></script>
+    <script src="script.js?v=1.7.5"></script>
 </body>
 
 </html>
