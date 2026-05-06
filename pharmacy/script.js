@@ -191,7 +191,11 @@ async function loadDailyLogs() {
         const logsContainer = document.getElementById('dosage-logs-list');
         if (!logsContainer) return;
 
-        // 명시적으로 필요한 컬럼만 조회 (성능 최적화)
+        // 최근 30일간의 기록을 가져옴 (그룹화를 위해 범위 확대)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
+
         const { data, error } = await _supabase
             .from('dosage_logs')
             .select(`
@@ -199,28 +203,44 @@ async function loadDailyLogs() {
                 medicine_inventory(item_name, unit, category)
             `)
             .eq('user_id', currentUser.id)
-            .gte('taken_at', getTodayStartISO())
+            .gte('taken_at', thirtyDaysAgo.toISOString())
             .order('taken_at', { ascending: false });
 
         if (error) throw error;
 
-        // 1. 대시보드 체크 상태 업데이트
-        const takenMembers = data ? [...new Set(data.map(l => l.family_member))] : [];
+        // 1. 대시보드 체크 상태 업데이트 (오늘 복용 여부만 필터링)
+        const todayStart = getTodayStartISO();
+        const todayLogs = data ? data.filter(log => log.taken_at >= todayStart) : [];
+        const takenMembers = [...new Set(todayLogs.map(l => l.family_member))];
+        
         document.querySelectorAll('.family-member').forEach(el => {
             const memberName = el.dataset.member;
             el.classList.toggle('taken', takenMembers.includes(memberName));
         });
 
-        // 2. 로그 리스트 렌더링
+        // 2. 로그 리스트 렌더링 (날짜별 그룹화)
         if (!data || data.length === 0) {
-            logsContainer.innerHTML = '<p class="empty-state">오늘의 복용 기록이 아직 없네요.</p>';
+            logsContainer.innerHTML = '<p class="empty-state">최근 30일간 복용 기록이 없습니다.</p>';
             return;
         }
 
         logsContainer.innerHTML = '';
+        let lastDate = '';
+
         data.forEach(log => {
-            const time = new Date(log.taken_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            const dateObj = new Date(log.taken_at);
+            const dateStr = dateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+            const timeStr = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
             
+            // 날짜 구분선 추가
+            if (dateStr !== lastDate) {
+                const separator = document.createElement('div');
+                separator.className = 'date-separator';
+                separator.innerHTML = `<span>${dateStr}</span>`;
+                logsContainer.appendChild(separator);
+                lastDate = dateStr;
+            }
+
             let med = log.medicine_inventory;
             if (Array.isArray(med)) med = med[0];
 
@@ -236,13 +256,16 @@ async function loadDailyLogs() {
                         <i class="${logIconClass}" style="color: ${logIconColor}; font-size: 0.9rem;"></i>
                         ${med?.item_name || '알 수 없는 약'}
                     </p>
-                    <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 2px;">${log.dosage_amount}${med?.unit || '회분'} · ${log.notes || '메모 없음'}</p>
+                    <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 2px;">
+                        <span class="log-item-date">${dateStr}</span>
+                        ${log.dosage_amount}${med?.unit || '회분'} · ${log.notes || '메모 없음'}
+                    </p>
                 </div>
                 <div class="log-actions" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                     <button class="delete-log-btn" onclick="deleteLog('${log.id}', '${log.medicine_id}', ${log.dosage_amount})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0 0 5px 10px; opacity: 0.6; transition: opacity 0.2s;">
                         <i class="fas fa-minus-circle"></i>
                     </button>
-                    <span class="log-time" style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.05);">${time}</span>
+                    <span class="log-time" style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.05);">${timeStr}</span>
                 </div>
             `;
             logsContainer.appendChild(item);
