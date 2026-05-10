@@ -145,7 +145,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>복용 일수</label>
+                            <label>약 재고</label>
                             <input type="number" id="total_days" placeholder="예: 3">
                         </div>
                     </div>
@@ -288,6 +288,18 @@
                 <button id="confirm-cancel" class="action-btn" style="flex: 1; height: 52px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 700; border-radius: 16px;">취소</button>
                 <button id="confirm-ok" class="action-btn" style="flex: 1; height: 52px; background: #ef4444; border: none; color: white; font-weight: 800; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2); border-radius: 16px;">삭제</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 모달: 경고창 (Alert) -->
+    <div id="alert-modal" class="modal">
+        <div class="modal-content" style="max-width: 320px; text-align: center; padding: 40px 30px; border-radius: 28px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 4rem; color: var(--accent); margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(244, 114, 182, 0.3));">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 id="alert-title" style="margin-bottom: 12px; font-weight: 800; font-size: 1.4rem; color: var(--text-main);">재고 부족</h3>
+            <p id="alert-message" style="margin-bottom: 30px; opacity: 0.7; line-height: 1.6; font-size: 1rem; word-break: keep-all;"></p>
+            <button id="alert-ok" class="action-btn" style="width: 100%; height: 56px; background: var(--primary); border: none; color: white; font-weight: 800; font-size: 1.1rem; border-radius: 18px; box-shadow: 0 10px 20px rgba(167, 139, 250, 0.3); cursor: pointer;">확인했습니다</button>
         </div>
     </div>
 

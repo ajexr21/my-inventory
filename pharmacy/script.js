@@ -413,6 +413,33 @@ function showConfirmModal(title, message) {
     });
 }
 
+function showAlertModal(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('alert-modal');
+        const titleEl = document.getElementById('alert-title');
+        const messageEl = document.getElementById('alert-message');
+        const okBtn = document.getElementById('alert-ok');
+
+        if (!modal || !okBtn) {
+            alert(message);
+            resolve();
+            return;
+        }
+
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        modal.classList.add('active');
+
+        const onOk = () => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            resolve();
+        };
+
+        okBtn.addEventListener('click', onOk);
+    });
+}
+
 // 칩 선택 로직 (이벤트 위임 활용)
 document.addEventListener('click', e => {
     if (e.target.classList.contains('chip')) {
@@ -654,6 +681,22 @@ document.getElementById('dosage-form').onsubmit = async (e) => {
     const notes = `${selectedTime} | ${document.getElementById('dosage_notes').value}`;
 
     try {
+        // 1. 재고 선행 확인
+        const { data: med, error: fetchError } = await _supabase
+            .from('medicine_inventory')
+            .select('stock_quantity, item_name, unit')
+            .eq('id', medId)
+            .eq('user_id', currentUser.id)
+            .single();
+
+        if (fetchError || !med) throw new Error('약 정보를 불러올 수 없습니다.');
+
+        if (med.stock_quantity < amount) {
+            await showAlertModal('재고 부족', `[${med.item_name}]의 현재 재고는 ${med.stock_quantity}${med.unit || '회분'}입니다.\n재고를 먼저 충전하거나 수정해 주세요.`);
+            return;
+        }
+
+        // 2. 복용 기록 등록
         const { error: logError } = await _supabase.from('dosage_logs').insert({
             user_id: currentUser.id,
             medicine_id: medId,
@@ -664,20 +707,11 @@ document.getElementById('dosage-form').onsubmit = async (e) => {
 
         if (logError) throw logError;
 
-        // 재고 차감
-        const { data: med } = await _supabase
-            .from('medicine_inventory')
-            .select('stock_quantity')
+        // 3. 재고 차감
+        await _supabase.from('medicine_inventory')
+            .update({ stock_quantity: Math.max(0, med.stock_quantity - amount) })
             .eq('id', medId)
-            .eq('user_id', currentUser.id)
-            .single();
-            
-        if (med) {
-            await _supabase.from('medicine_inventory')
-                .update({ stock_quantity: Math.max(0, med.stock_quantity - amount) })
-                .eq('id', medId)
-                .eq('user_id', currentUser.id);
-        }
+            .eq('user_id', currentUser.id);
 
         showToast('복용 기록이 등록되었습니다!');
         closeModal('dosage-modal');
