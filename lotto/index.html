@@ -8,7 +8,7 @@
     <title>우리집 복권방</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="style.css?v=1.5.1">
+    <link rel="stylesheet" href="style.css?v=1.5.2">
     <link rel="apple-touch-icon" href="../icon.png">
     <link rel="icon" type="image/png" href="../icon.png">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -208,6 +208,30 @@
             </div>
         </div>
     </div>
+    <!-- 스캔 결과 확인 모달 -->
+    <div id="scan-result-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle" style="color: var(--secondary-color);"></i> 스캔 완료</h3>
+                <button id="scan-modal-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 14px; color: var(--text-muted);">스캔된 로또 정보</div>
+                    <h2 style="font-size: 26px; font-weight: 800; color: var(--primary-color);">제 <span id="scan-round"></span>회</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 5px;"><span id="scan-game-count" style="font-weight: 800; color: var(--text-color);"></span>개의 게임이 발견되었습니다.</p>
+                </div>
+
+                <div id="scan-preview-container" class="scan-preview-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding: 5px;">
+                    <!-- 스캔된 번호 세트들이 여기에 렌더링됨 -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button id="scan-cancel-btn" class="btn-secondary" style="margin-top: 0; flex: 1;">다시 스캔</button>
+                <button id="scan-confirm-btn" class="btn-primary" style="margin-top: 0; flex: 2;">등록하기</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 커스텀 컨펌 모달 추가 -->
     <div id="confirm-modal" class="modal-overlay hidden">
@@ -242,7 +266,7 @@
     </nav>
 
     <script src="../config.js?v=1.5.1"></script>
-    <script src="script.js?v=1.5.1"></script>
+    <script src="script.js?v=1.5.2"></script>
 </body>
 
 </html>

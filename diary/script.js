@@ -84,14 +84,8 @@ window.renderDiaries = function() {
         return matchesAuthor && matchesSearch;
     });
 
-    let html = `
-        <div class="diary-card add-card" onclick="window.openModal(document.getElementById('write-modal'))">
-            <div class="add-content">
-                <i class="fas fa-plus-circle"></i>
-                <span>오늘의 일기 쓰기</span>
-            </div>
-        </div>
-    `;
+    let html = '';
+
     html += filtered.map(diary => {
         const date = new Date(diary.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
         return `
@@ -217,16 +211,21 @@ window.getAuthorKey = function(author) {
 
 window.openModal = function(modal) { 
     if (modal) {
-        modal.classList.remove('hidden'); 
+        modal.classList.add('active'); 
         document.body.classList.add('no-scroll');
     }
 };
+
 window.closeModal = function(modal) { 
     if (modal) {
-        modal.classList.add('hidden');
+        modal.classList.remove('active');
         document.body.classList.remove('no-scroll');
         if (modal.id === 'write-modal') window.clearForm();
     }
+};
+
+window.openWriteModal = function() {
+    window.openModal(writeModal);
 };
 
 window.clearForm = function() {

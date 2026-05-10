@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualRoundInput = document.getElementById('manual-round');
     const selectedCountEl = document.getElementById('selected-count');
     const selectedPreviewEl = document.getElementById('selected-balls-preview');
+    
+    // Scan Result Modal Elements
+    const scanResultModal = document.getElementById('scan-result-modal');
+    const scanRoundEl = document.getElementById('scan-round');
+    const scanGameCountEl = document.getElementById('scan-game-count');
+    const scanPreviewContainer = document.getElementById('scan-preview-container');
+    const scanModalCloseBtn = document.getElementById('scan-modal-close-btn');
+    const scanCancelBtn = document.getElementById('scan-cancel-btn');
+    const scanConfirmBtn = document.getElementById('scan-confirm-btn');
 
     // Winning Result UI Elements
     const editWinBtn = document.getElementById('edit-win-btn');
@@ -44,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let html5QrcodeScanner = null;
     let lottoData = []; // DB에서 가져올 예정
     let winningNumbersCache = JSON.parse(localStorage.getItem('winningNumbersCache')) || {};
+    let tempScannedData = null;
+    let isModalOpen = false;
 
     // Supabase 설정 (config.js 로드됨)
     let _supabase = null;
@@ -600,8 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (games.length > 0) {
-                    addLottoTicket(round, games.slice(0, 5)); // 한 장당 최대 5게임까지만 등록
-                    document.querySelector('[data-target="tab-list"]').click();
+                    addLottoTicket(round, games.slice(0, 5));
+                    showSuccessModal(round, games.slice(0, 5));
                 } else {
                     console.error("Number extraction failed for data:", vData);
                     qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">번호 추출에 실패했습니다.<br><span style="font-size:12px;">올바른 로또 QR인지 확인해주세요.</span></p>';
@@ -612,6 +623,75 @@ document.addEventListener('DOMContentLoaded', () => {
             // 로또 QR이 아닌 경우
             qrReaderDiv.innerHTML = '<p style="padding: 20px; color: red;">동행복권 로또 QR 코드가 아닙니다.</p>';
             setTimeout(startScanner, 2000);
+        }
+    }
+
+    function showSuccessModal(round, games) {
+        isModalOpen = true;
+        
+        // 스캐너 일시정지
+        if (html5QrcodeScanner && html5QrcodeScanner.pause) {
+            html5QrcodeScanner.pause();
+        }
+
+        // 모달 제목 및 스타일 변경 (자동 등록 모드)
+        const modalHeader = scanResultModal.querySelector('.modal-header h3');
+        modalHeader.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i> 등록 완료!';
+        
+        scanRoundEl.textContent = round;
+        scanGameCountEl.textContent = games.length;
+        
+        // 버튼 숨김 (자동 진행이므로)
+        scanCancelBtn.classList.add('hidden');
+        scanConfirmBtn.classList.add('hidden');
+        scanModalCloseBtn.classList.add('hidden');
+
+        scanPreviewContainer.innerHTML = '';
+        games.forEach((game, idx) => {
+            const gameRow = document.createElement('div');
+            gameRow.className = 'scan-preview-row';
+            gameRow.style.cssText = 'background: rgba(16, 185, 129, 0.05); padding: 10px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom: 8px;';
+            
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size: 11px; color: #10b981; font-weight: 800; margin-bottom: 5px;';
+            label.textContent = `게임 ${String.fromCharCode(65 + idx)}`;
+            gameRow.appendChild(label);
+
+            const balls = document.createElement('div');
+            balls.className = 'game-numbers';
+            balls.style.justifyContent = 'center';
+            game.forEach(num => {
+                const ball = document.createElement('div');
+                ball.className = `number-ball ball-${Math.ceil(num / 10)}`;
+                ball.textContent = num;
+                balls.appendChild(ball);
+            });
+            gameRow.appendChild(balls);
+            scanPreviewContainer.appendChild(gameRow);
+        });
+
+        openModal(scanResultModal);
+
+        // 1초 후 자동 닫기 및 재개
+        setTimeout(() => {
+            closeScanResultModal();
+            // 버튼 상태 복구 (다음에 혹시 쓸 수도 있으니)
+            scanCancelBtn.classList.remove('hidden');
+            scanConfirmBtn.classList.remove('hidden');
+            scanModalCloseBtn.classList.remove('hidden');
+        }, 1000);
+    }
+
+    function closeScanResultModal() {
+        closeModal(scanResultModal);
+        isModalOpen = false;
+        tempScannedData = null;
+        
+        // 스캐너 재개
+        if (html5QrcodeScanner && html5QrcodeScanner.resume) {
+            html5QrcodeScanner.resume();
+        } else {
+            startScanner();
         }
     }
 
@@ -717,44 +797,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 2. DB에 없으면 외부 API 호출
-            const apiUrl = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${round}`;
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
-            const lottoResult = JSON.parse(data.contents);
-
-            if (lottoResult.returnValue === "success") {
-                const winNums = [
-                    lottoResult.drwtNo1, lottoResult.drwtNo2, lottoResult.drwtNo3,
-                    lottoResult.drwtNo4, lottoResult.drwtNo5, lottoResult.drwtNo6
-                ];
-                const bonusNum = lottoResult.bnusNo;
-                const drawDate = lottoResult.drwNoDate;
-
-                winningNumbersCache[round] = {
-                    numbers: winNums,
-                    bonus: bonusNum,
-                    date: drawDate
-                };
-
-                // 3. 외부 API에서 가져온 결과를 DB에 저장 (다음 조회를 위해)
-                if (_supabase) {
-                    await _supabase.from('lotto_results').upsert({
-                        round: round,
-                        numbers: winNums,
-                        bonus: bonusNum,
-                        draw_date: drawDate
-                    });
-                    console.log(`[Lotto] ${round}회차 데이터를 DB에 캐싱했습니다.`);
-                }
-
-                saveData();
-                renderLottoList();
-            } else {
-                console.log(`${round}회차 당첨 정보가 아직 없습니다.`);
-            }
+            // 2. DB에 없으면 종료 (외부 API 호출 제거됨)
+            console.log(`[Lotto] ${round}회차 정보가 DB에 없습니다.`);
         } catch (error) {
             console.error("당첨 번호 조회 실패:", error);
         }
@@ -851,8 +895,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const bgColor = getBallColorHex(num);
-                    const matchedClass = (isMatched || isBonusMatched) ? 'matched' : '';
-                    const inlineStyle = (isMatched || isBonusMatched) ? `background-color: ${bgColor};` : `background-color: ${bgColor}; opacity: ${winInfo ? 0.3 : 1};`;
+                    
+                    // 보너스 번호는 2등일 때만 당첨 스타일(matched) 적용
+                    const isWinningMatch = isMatched || (isBonusMatched && resultObj && resultObj.rank === 2);
+                    const matchedClass = isWinningMatch ? 'matched' : '';
+                    
+                    // 당첨되지 않은 번호나 2등이 아닌 보너스 번호는 투명도 낮춤 (낙첨 처리)
+                    const opacity = isWinningMatch ? 1 : (winInfo ? 0.3 : 1);
+                    const inlineStyle = `background-color: ${bgColor}; opacity: ${opacity};`;
 
                     gameHtml += `<div class="number-ball ${matchedClass}" style="${inlineStyle}">${num}</div>`;
                 });
@@ -923,63 +973,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (attempt > 3) {
-                container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">추첨 정보를 가져올 수 없습니다.</p>';
+            // 2. DB 확인 (로컬 캐시에 없을 경우)
+            if (_supabase) {
+                const { data: dbData, error: dbError } = await _supabase
+                    .from('lotto_results')
+                    .select('*')
+                    .eq('round', round)
+                    .single();
+
+                if (!dbError && dbData) {
+                    winningNumbersCache[round] = {
+                        numbers: dbData.numbers,
+                        bonus: dbData.bonus,
+                        date: dbData.draw_date
+                    };
+                    saveData();
+                    renderFormattedNumbers({
+                        draw_no: round,
+                        draw_date: dbData.draw_date,
+                        numbers: dbData.numbers,
+                        bonus: dbData.bonus
+                    }, container, dateEl, roundTitleEl);
+                    return;
+                }
+            }
+
+            // 3. 종료 조건 (너무 많이 내려가거나 1회 미만일 때)
+            if (attempt > 10 || round < 1) {
+                container.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); grid-column: span 7;">DB에 등록된 최근 당첨 정보가 없습니다.</p>';
+                roundTitleEl.textContent = '-';
                 return;
             }
 
             try {
-                // 시도 1: 시그로또 API
-                const sigUrl = `https://www.siglotto.kr/api/public/v1/winning/${round}`;
-                const sigResponse = await fetch(sigUrl, { signal: AbortSignal.timeout(3500) });
-                
-                if (sigResponse.ok) {
-                    const data = await sigResponse.json();
-                    if (data && data.status === "success") {
-                        const result = {
-                            draw_no: data.round,
-                            draw_date: "최신", 
-                            numbers: data.numbers,
-                            bonus: data.bonus
-                        };
-                        renderFormattedNumbers(result, container, dateEl, roundTitleEl);
-                        return;
-                    }
-                }
-                
-                // 시도 2: 동행복권 API (AllOrigins Proxy)
-                const dhUrl = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${round}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(dhUrl)}&timestamp=${Date.now()}`;
-                const dhResponse = await fetch(proxyUrl);
-                
-                if (dhResponse.ok) {
-                    const dhData = await dhResponse.json();
-                    if (dhData.contents) {
-                        const lottoResult = JSON.parse(dhData.contents);
-                        if (lottoResult && lottoResult.returnValue === "success") {
-                            const result = {
-                                draw_no: lottoResult.drwNo,
-                                draw_date: lottoResult.drwNoDate,
-                                numbers: [
-                                    lottoResult.drwtNo1, lottoResult.drwtNo2, lottoResult.drwtNo3,
-                                    lottoResult.drwtNo4, lottoResult.drwtNo5, lottoResult.drwtNo6
-                                ],
-                                bonus: lottoResult.bnusNo
-                            };
-                            
-                            winningNumbersCache[round] = {
-                                numbers: result.numbers,
-                                bonus: result.bonus,
-                                date: result.draw_date
-                            };
-                            saveData();
-                            renderFormattedNumbers(result, container, dateEl, roundTitleEl);
-                            return;
-                        }
-                    }
-                }
-
-                // 둘 다 실패하면 이전 회차 시도
+                // 외부 API 호출 제거됨 -> 바로 이전 회차 시도
                 await tryFetchResult(round - 1, attempt + 1);
             } catch (error) {
                 console.warn(`Fetch error for round ${round}, retrying...`, error);
@@ -1212,9 +1239,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 초기 로드 시퀀스 최적화
-    updateLatestLottoResult();
-    initLottoApp(); // DB 초기화 -> loadLottoData -> 각 회차 당첨 번호 조회 순으로 진행됨
-    generateGemmaPicks(); // 초기 젬마 추천 생성
+    initLottoApp().then(() => {
+        updateLatestLottoResult();
+        generateGemmaPicks(); // 초기 젬마 추천 생성
+    });
 
     // --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
     let touchStart = 0;

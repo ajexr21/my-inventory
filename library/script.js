@@ -42,11 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "거의 다 됐어요! 책장의<br>먼지를 탈탈 털어내고 있어요. 🧹"
     ];
 
-    window.showLoading = () => {
+    window.showLoading = (initialMsg) => {
         const msgEl = document.getElementById('loading-status-msg');
         let idx = 0;
         
-        if (msgEl) msgEl.innerHTML = loadingMessages[0];
+        if (msgEl) msgEl.innerHTML = initialMsg || loadingMessages[0];
         
         window.openModal(document.getElementById('loading-modal'));
         
@@ -577,10 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="status-selector">
                     <p class="selector-label">교은아, 지금 이 책은 어떤 상태야?</p>
                     <div class="status-options">
-                        <button class="opt-btn ${book.status === 'reading' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'reading')">
+                        <button class="opt-btn ${book.status === 'reading' ? 'active' : ''}" onclick="updateBookStatus(event, '${book.id}', 'reading')">
                             <i class="fas fa-book-reader"></i><br>읽고 있어요
                         </button>
-                        <button class="opt-btn ${book.status === 'finished' ? 'active' : ''}" onclick="updateBookStatus('${book.id}', 'finished')">
+                        <button class="opt-btn ${book.status === 'finished' ? 'active' : ''}" onclick="updateBookStatus(event, '${book.id}', 'finished')">
                             <i class="fas fa-check-circle"></i><br>${(book.read_count || 0) > 0 ? '또 읽었어요!' : '다 읽었어요!'}
                         </button>
                     </div>
@@ -621,62 +621,85 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openModal(modal);
     };
 
-    window.updateBookStatus = async (bookId, newStatus) => {
+    window.updateBookStatus = async (event, bookId, newStatus) => {
         if (!_supabase) return;
         
+        const btn = event.currentTarget;
+        const allBtns = btn.parentElement.querySelectorAll('.opt-btn');
+        
+        // 1. 즉각적인 피드백 (로딩 상태 표시)
+        allBtns.forEach(b => b.disabled = true);
+        btn.classList.add('loading');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><br>저장 중...';
+        
         const oldBook = books.find(b => b.id === bookId);
-        if (!oldBook) return;
-
-        // '다 읽었어요' 또는 '또 읽었어요' 처리 (N회독 대응)
-        if (newStatus === 'finished') {
-            const newReadCount = (oldBook.read_count || 0) + 1;
-            
-            // 상태 업데이트 및 횟수 증가
-            const { error } = await _supabase
-                .from('library_books')
-                .update({ 
-                    status: 'finished', 
-                    read_count: newReadCount,
-                    current_page: 0 // 다 읽었으므로 페이지 초기화
-                })
-                .eq('id', bookId);
-
-            if (!error) {
-                window.closeModal(document.getElementById('book-modal'));
-                
-                // 축하 효과
-                triggerConfetti();
-                
-                sendCelebrationToDad(oldBook.title, newReadCount);
-                
-                const celebrationMsg = newReadCount > 1 
-                    ? `벌써 ${newReadCount}번째 읽었네요!\n교은이는 정말 대단한 독서왕이에요! 👑📖`
-                    : "우와! 교은이가 책을 한 권 더 읽었네요!\n아빠한테 자랑했어요! 🥳💖";
-                
-                await window.customAlert(celebrationMsg, "축하해요!");
-                await fetchBooks();
-                setupRealtimeSubscription();
-            } else {
-                console.error("상태 업데이트 실패:", error);
-                await window.customAlert("정보를 저장하지 못했어요. DB 컬럼이 추가되었는지 확인해 주세요!", "오류");
-            }
+        if (!oldBook) {
+            allBtns.forEach(b => b.disabled = false);
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
             return;
         }
 
-        // 다른 상태 변경 (읽고 있어요 등)
-        const { error } = await _supabase
-            .from('library_books')
-            .update({ status: newStatus })
-            .eq('id', bookId);
-            
-        if (!error) {
-            if (newStatus === 'reading') {
-                // 약간의 지연 후 다시 렌더링된 데이터로 모달 갱신
-                await fetchBooks();
-                openBookDetail(bookId);
-            } else {
-                window.closeModal(document.getElementById('book-modal'));
+        try {
+            // '다 읽었어요' 또는 '또 읽었어요' 처리 (N회독 대응)
+            if (newStatus === 'finished') {
+                const newReadCount = (oldBook.read_count || 0) + 1;
+                
+                // 상태 업데이트 및 횟수 증가
+                const { error } = await _supabase
+                    .from('library_books')
+                    .update({ 
+                        status: 'finished', 
+                        read_count: newReadCount,
+                        current_page: 0 // 다 읽었으므로 페이지 초기화
+                    })
+                    .eq('id', bookId);
+
+                if (!error) {
+                    window.closeModal(document.getElementById('book-modal'));
+                    
+                    // 축하 효과
+                    triggerConfetti();
+                    
+                    sendCelebrationToDad(oldBook.title, newReadCount);
+                    
+                    const celebrationMsg = newReadCount > 1 
+                        ? `벌써 ${newReadCount}번째 읽었네요!\n교은이는 정말 대단한 독서왕이에요! 👑📖`
+                        : "우와! 교은이가 책을 한 권 더 읽었네요!\n아빠한테 자랑했어요! 🥳💖";
+                    
+                    await window.customAlert(celebrationMsg, "축하해요!");
+                    await fetchBooks();
+                } else {
+                    throw error;
+                }
+                return;
             }
+
+            // 다른 상태 변경 (읽고 있어요 등)
+            const { error } = await _supabase
+                .from('library_books')
+                .update({ status: newStatus })
+                .eq('id', bookId);
+                
+            if (!error) {
+                if (newStatus === 'reading') {
+                    await fetchBooks();
+                    openBookDetail(bookId);
+                } else {
+                    window.closeModal(document.getElementById('book-modal'));
+                }
+            } else {
+                throw error;
+            }
+        } catch (error) {
+            console.error("상태 업데이트 실패:", error);
+            await window.customAlert("정보를 저장하지 못했어요. 다시 시도해 주세요!", "오류");
+            
+            // 오류 시 상태 복구
+            allBtns.forEach(b => b.disabled = false);
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
         }
     };
 
@@ -1051,17 +1074,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     saveManualBtn.addEventListener('click', async () => {
-        const title = document.getElementById('manual-title').value.trim();
-        const author = document.getElementById('manual-author').value.trim();
-        const isbn = document.getElementById('manual-isbn').value.trim();
+        const titleInput = document.getElementById('manual-title');
+        const authorInput = document.getElementById('manual-author');
+        const isbnInput = document.getElementById('manual-isbn');
         
-        if (!title) {
+        const title = titleInput.value.trim();
+        const author = authorInput.value.trim();
+        const isbn = isbnInput.value.trim();
+        
+        // ISBN이 있고 제목/작가 중 하나라도 비어있으며 아직 검색 결과가 없다면 자동 검색 시도
+        if (isbn && (!title || !author) && !manualBookData) {
+            manualBookData = await searchBookByISBN(isbn, true);
+        } else if (!title) {
             await window.customAlert("책 이름을 알려주세요!", "입력 확인");
             return;
         }
 
-        window.showLoading();
-        window.updateLoadingMsg("책을 책장에 넣는 중... ✨");
+        window.showLoading("교은이의 소중한 책을<br>책장에 쏙 넣고 있어요! ✨");
 
         let coverUrl = '';
         
@@ -1071,24 +1100,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const uploadedUrl = await uploadBookCover(selectedImageFile);
             if (uploadedUrl) {
                 coverUrl = uploadedUrl;
-            } else if (selectedImageFile) {
-                // 업로드 실패했지만 이미지가 있었던 경우 알림
-                console.warn("이미지 업로드 실패, 기본 정보로 저장합니다.");
             }
         }
         
         const bookData = {
-            title: title,
-            author: author || '작가 미상',
+            title: titleInput.value.trim(), // 검색 후 채워졌을 수 있으므로 다시 가져옴
+            author: authorInput.value.trim() || '작가 미상',
             isbn: isbn,
             status: 'reading',
             cover_url: coverUrl || (manualBookData ? manualBookData.cover_url : '')
         };
-        
-        // 수동 수정된 내용 반영
-        bookData.title = title;
-        bookData.author = author;
-        bookData.isbn = isbn;
         
         await addNewBook(bookData);
         

@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=1.5.1">
+    <link rel="stylesheet" href="style.css?v=1.7.0">
 </head>
 
 <body>
@@ -20,25 +20,26 @@
             <i class="fas fa-sync-alt"></i>
         </div>
     </div>
-    <div class="app-container">
-        <header class="app-header">
+    <div class="container">
+        <header>
             <div class="header-top">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left-long"></i></a>
-                    <h1 class="premium-title">우리집 일기장</h1>
-                </div>
-                <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
-                    <button id="search-toggle" class="theme-toggle"><i class="fas fa-search"></i></button>
-                    <button id="theme-toggle" class="theme-toggle"><i class="fas fa-sun"></i></button>
+                <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <h1 class="premium-title">우리집 일기장</h1>
+                <div class="header-actions">
+                    <button id="search-toggle" title="검색"><i class="fas fa-search"></i></button>
+                    <button id="theme-toggle" title="테마 변경"><i class="fas fa-sun"></i></button>
                 </div>
             </div>
         </header>
 
         <main class="app-main">
-            <div class="search-bar" id="search-bar" style="display:none; margin-bottom: 20px;">
-                <input type="text" id="diary-search" placeholder="일기 내용을 검색해보세요..."
-                    style="width:100%; padding:14px 20px; border-radius:18px; border:none; background:var(--card); color:var(--text); font-size:0.95rem; outline:none; border: 1px solid var(--border); box-shadow: var(--shadow);">
+            <div class="search-bar" id="search-bar" style="display:none;">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="diary-search" placeholder="일기 내용을 검색해보세요...">
+                </div>
             </div>
+            
             <section class="summary-card">
                 <div class="intro-content">
                     <h2>오늘 우리 가족은<br>어떤 하루였나요?</h2>
@@ -59,18 +60,23 @@
             <div id="diary-list" class="diary-list"></div>
         </main>
 
-        <!-- 일기 쓰기 모달 -->
+        <!-- 하단 플로팅 버튼 (우리집 표준) -->
+        <div class="add-btn-container">
+            <button id="open-modal-btn" onclick="openWriteModal()"><i class="fas fa-pen-fancy"></i> 일기 쓰기</button>
+        </div>
+
+        <!-- 일기 쓰기 모달 (가계부 표준) -->
         <div id="write-modal" class="modal hidden">
             <div class="modal-content">
-                <header class="modal-header">
-                    <button id="cancel-write-btn" class="close-modal text-btn"
-                        onclick="closeModal(document.getElementById('write-modal'))">취소</button>
-                    <span class="modal-title">일기 쓰기</span>
-                    <button id="save-diary-btn" class="save-btn">등록</button>
+                <header class="modal-header-premium">
+                    <h3 class="modal-title-premium">일기 쓰기</h3>
+                    <button class="close-modal-btn" onclick="closeModal(document.getElementById('write-modal'))">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </header>
 
-                <div class="write-form">
-                    <div class="input-group">
+                <div class="modal-body-premium">
+                    <div class="input-group-premium">
                         <label>작성자</label>
                         <div class="author-chips" id="author-select">
                             <div class="author-chip" data-value="아빠">아빠</div>
@@ -81,42 +87,52 @@
                         </div>
                     </div>
 
-                    <div class="input-group" style="background:none; border:none; padding:0;">
-                        <textarea id="diary-content" class="content-input" placeholder="오늘의 이야기를 들려주세요..."></textarea>
+                    <div class="input-group-premium">
+                        <label>오늘의 이야기</label>
+                        <textarea id="diary-content" class="content-input-premium" placeholder="오늘 어떤 일이 있었나요?"></textarea>
                     </div>
 
-                    <div class="settings-group">
-                        <div class="setting-item">
+                    <div class="settings-group-premium">
+                        <div class="setting-item-premium">
                             <span>비밀 일기로 잠글까요?</span>
                             <label class="ios-switch">
                                 <input type="checkbox" id="is-private">
                                 <span class="ios-slider"></span>
                             </label>
                         </div>
-                        <div id="password-area" class="password-box hidden">
+                        <div id="password-area" class="password-box-premium hidden">
                             <i class="fas fa-key"></i>
-                            <input type="password" id="diary-password" placeholder="비밀번호">
+                            <input type="password" id="diary-password" placeholder="비밀번호 설정">
                         </div>
                     </div>
+                    
+                    <button id="save-diary-btn" class="main-action-btn-premium">일기 등록하기</button>
                 </div>
             </div>
         </div>
 
-        <!-- 일기 보기 모달 -->
+        <!-- 일기 보기 모달 (가계부 표준) -->
         <div id="view-modal" class="modal hidden">
             <div class="modal-content">
-                <header class="modal-header">
-                    <button class="close-view text-btn"
-                        onclick="closeModal(document.getElementById('view-modal'))">닫기</button>
-                    <span id="view-author-badge"
-                        style="padding:4px 12px; border-radius:10px; font-size:0.85rem; font-weight:800; color:white;"></span>
-                    <button id="delete-diary-btn"
-                        style="background:none; border:none; color:#EF4444; font-size:1.1rem; padding:10px; cursor:pointer;"><i
-                            class="fas fa-trash-alt"></i></button>
+                <header class="modal-header-premium">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 class="modal-title-premium">일기 보기</h3>
+                        <span id="view-author-badge" class="author-badge-premium"></span>
+                    </div>
+                    <button class="close-modal-btn" onclick="closeModal(document.getElementById('view-modal'))">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </header>
-                <div class="write-form" style="padding-top:30px;">
-                    <div id="view-date" style="font-size:0.9rem; opacity:0.5; margin-bottom:10px;"></div>
-                    <div id="view-body" style="font-size:1.1rem; line-height:1.7; white-space:pre-wrap; opacity:0.9;">
+                
+                <div class="modal-body-premium">
+                    <div id="view-date" class="view-date-premium"></div>
+                    <div id="view-body" class="view-content-premium"></div>
+                    
+                    <div class="view-footer-premium">
+                        <button id="delete-diary-btn" class="delete-action-btn-premium">
+                            <i class="fas fa-trash-can"></i>
+                        </button>
+                        <button class="main-action-btn-premium secondary" onclick="closeModal(document.getElementById('view-modal'))">닫기</button>
                     </div>
                 </div>
             </div>
@@ -148,7 +164,7 @@
         </div>
     </div>
     <script src="../config.js?v=1.5.1"></script>
-    <script src="script.js?v=1.5.1"></script>
+    <script src="script.js?v=1.7.0"></script></script></script></script></script></script></script></script>
 </body>
 
 </html>

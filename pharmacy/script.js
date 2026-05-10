@@ -59,15 +59,46 @@ function initTheme() {
 function initTabs() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
+    const addBtnContainer = document.querySelector('.add-btn-container');
+    const addBtn = document.getElementById('open-modal-btn');
     
     tabBtns.forEach(btn => {
         btn.onclick = () => {
             const target = btn.dataset.tab;
             tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
+            tabContents.forEach(c => {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
             btn.classList.add('active');
             const targetContent = document.getElementById(`tab-${target}`);
-            if (targetContent) targetContent.classList.add('active');
+            if (targetContent) {
+                targetContent.classList.add('active');
+                targetContent.style.display = 'block';
+            }
+
+            // 하단 플로팅 버튼 동적 업데이트 (가계부 패턴)
+            if (target === 'inventory') {
+                if (addBtnContainer) addBtnContainer.style.display = 'flex';
+                if (addBtn) {
+                    addBtn.onclick = () => openAddModal('prescription');
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i> 처방약 추가하기';
+                }
+            } else if (target === 'emergency') {
+                if (addBtnContainer) addBtnContainer.style.display = 'flex';
+                if (addBtn) {
+                    addBtn.onclick = () => openAddModal('emergency');
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i> 상비약 추가하기';
+                }
+            } else if (target === 'logs') {
+                if (addBtnContainer) addBtnContainer.style.display = 'flex';
+                if (addBtn) {
+                    addBtn.onclick = openManualDosageModal;
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i> 복용 기록하기';
+                }
+            } else {
+                if (addBtnContainer) addBtnContainer.style.display = 'none';
+            }
         };
     });
 }
@@ -155,7 +186,7 @@ function renderInventory(items) {
             <div class="med-actions">
                 <button class="action-btn take" onclick="openDosageModal('${item.id}', '${item.item_name}', '${item.unit || '회분'}')">체크하기</button>
                 <button class="action-btn" onclick="editMedicine('${item.id}')" title="수정"><i class="fas fa-edit"></i></button>
-                <button class="action-btn delete" onclick="deleteMedicine('${item.id}')" title="삭제"><i class="fas fa-circle-xmark"></i></button>
+                <button class="action-btn delete" onclick="deleteMedicine('${item.id}')" title="삭제"><i class="fas fa-trash-can"></i></button>
             </div>
         `;
         
@@ -263,8 +294,8 @@ async function loadDailyLogs() {
                     </p>
                 </div>
                 <div class="log-actions" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                    <button class="delete-log-btn" onclick="deleteLog('${log.id}', '${log.medicine_id}', ${log.dosage_amount})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0 0 5px 10px; opacity: 0.6; transition: opacity 0.2s;">
-                        <i class="fas fa-circle-xmark"></i>
+                    <button class="delete-log-btn" onclick="deleteLog('${log.id}', '${log.medicine_id}', ${log.dosage_amount})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 0 5px 10px; opacity: 0.6; transition: opacity 0.2s;">
+                        <i class="fas fa-trash-can"></i>
                     </button>
                     <span class="log-time" style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.05);">${timeStr}</span>
                 </div>
@@ -286,29 +317,31 @@ function openAddModal(mode = 'prescription') {
     const prescriptionFields = document.getElementById('prescription-fields');
     const emergencyFields = document.getElementById('emergency-fields');
     
-    if (mode === 'prescription') {
-        modalTitle.innerText = '약 등록하기';
-        if (prescriptionFields) prescriptionFields.style.display = 'block';
-        if (emergencyFields) emergencyFields.style.display = 'none';
-    } else {
-        modalTitle.innerText = '상비약 등록하기';
-        if (prescriptionFields) prescriptionFields.style.display = 'none';
-        if (emergencyFields) emergencyFields.style.display = 'block';
-    }
-
     document.getElementById('medicine-form').reset();
     document.getElementById('edit-id').value = '';
-    const detailList = document.getElementById('medicine-detail-list');
-    if (detailList) {
-        detailList.innerHTML = ''; // 상세 리스트 초기화
-        if (mode === 'prescription') {
-            for (let i = 0; i < 5; i++) addDetailRow(); // 기본 5개 입력창 생성
+    
+    if (mode === 'prescription') {
+        if (modalTitle) modalTitle.innerText = '처방약 등록';
+        if (prescriptionFields) prescriptionFields.style.display = 'block';
+        if (emergencyFields) emergencyFields.style.display = 'none';
+        
+        const detailList = document.getElementById('medicine-detail-list');
+        if (detailList) {
+            detailList.innerHTML = ''; 
+            for (let i = 0; i < 5; i++) addDetailRow();
         }
+    } else {
+        if (modalTitle) modalTitle.innerText = '상비약 등록';
+        if (prescriptionFields) prescriptionFields.style.display = 'none';
+        if (emergencyFields) emergencyFields.style.display = 'block';
     }
     
     // 칩 초기화
     document.querySelectorAll('#take-time-group .chip').forEach(c => c.classList.remove('selected'));
-    document.getElementById('medicine-modal').classList.add('active');
+    
+    const modal = document.getElementById('medicine-modal');
+    if (modal) modal.classList.add('active');
+    document.body.classList.add('no-scroll');
 }
 
 function openEmergencyAddModal() {
@@ -340,6 +373,7 @@ function removeDetailRow(btn) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+    document.body.classList.remove('no-scroll');
 }
 
 // 공용 확인 모달 (Promise 기반)
@@ -551,6 +585,7 @@ async function openDosageModal(medId, medName, unit) {
     if (defaultMember) defaultMember.classList.add('selected');
     
     document.getElementById('dosage-modal').classList.add('active');
+    document.body.classList.add('no-scroll');
 }
 
 let allMedicines = [];
@@ -606,6 +641,7 @@ async function openManualDosageModal() {
     if (defaultMember) defaultMember.classList.add('selected');
     
     document.getElementById('dosage-modal').classList.add('active');
+    document.body.classList.add('no-scroll');
 }
 
 // 복용 기록 저장
