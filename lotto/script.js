@@ -27,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanPreviewContainer = document.getElementById('scan-preview-container');
     const scanModalCloseBtn = document.getElementById('scan-modal-close-btn');
     const scanCancelBtn = document.getElementById('scan-cancel-btn');
+    const scanConfirmBtn = document.getElementById('scan-confirm-btn');
+
+    // Winning Result UI Elements
+    const editWinBtn = document.getElementById('edit-win-btn');
+    const winModal = document.getElementById('win-modal');
+    const winModalCloseBtn = document.getElementById('win-modal-close-btn');
     const winModalConfirmBtn = document.getElementById('win-modal-confirm-btn');
     const winRoundInput = document.getElementById('win-round');
     
@@ -104,9 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
             lottoData = data;
             localStorage.setItem('myLottoData', JSON.stringify(lottoData));
             
-            // 등록된 회차 당첨 번호 조회
+            // [최적화] 모든 회차 당첨 번호를 한 번에 배치 조회
             const rounds = [...new Set(lottoData.map(t => t.round))];
-            rounds.forEach(r => fetchWinningNumbersForRound(r));
+            await fetchMultipleWinningNumbers(rounds);
+            
+            // [최적화] 결과가 없는 항목들을 계산해서 DB에 기록
+            await syncWinResults();
             
             renderLottoList();
         } else {
@@ -722,7 +731,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveData();
         renderLottoList();
-        fetchWinningNumbersForRound(round);
+        
+        // [추가] 추가 즉시 결과 확인 및 DB 동기화
+        fetchWinningNumbersForRound(round).then(() => {
+            syncWinResults();
+        });
     }
 
     function saveData() {
@@ -749,9 +762,80 @@ document.addEventListener('DOMContentLoaded', () => {
     // 전역으로 노출하여 HTML에서 호출 가능하도록
     window.deleteTicket = deleteTicket;
 
+    // [최적화] 여러 회차의 당첨 번호를 한 번에 배치 조회하는 함수
+    async function fetchMultipleWinningNumbers(rounds) {
+        if (!_supabase || rounds.length === 0) return;
+
+        // 로컬 캐시에 없는 회차들만 필터링
+        const roundsToFetch = rounds.filter(r => !winningNumbersCache[r]);
+        if (roundsToFetch.length === 0) return;
+
+        console.log(`[Lotto] ${roundsToFetch.length}개의 새로운 회차 정보를 배치 조회합니다:`, roundsToFetch);
+
+        try {
+            const { data, error } = await _supabase
+                .from('lotto_results')
+                .select('*')
+                .in('round', roundsToFetch);
+
+            if (!error && data) {
+                data.forEach(item => {
+                    winningNumbersCache[item.round] = {
+                        numbers: item.numbers,
+                        bonus: item.bonus,
+                        date: item.draw_date
+                    };
+                });
+                saveData();
+                console.log(`[Lotto] 배치 조회 완료: ${data.length}개 항목 업데이트됨`);
+            }
+        } catch (error) {
+            console.error("배치 당첨 번호 조회 실패:", error);
+        }
+    }
+
+    // [최적화] 확인된 결과를 DB에 영구 기록하는 함수
+    async function syncWinResults() {
+        if (!_supabase || lottoData.length === 0) return;
+
+        const updates = [];
+        lottoData.forEach(ticket => {
+            // 결과가 아직 없고, 당첨 번호 정보는 있는 경우 계산 진행
+            if (!ticket.win_results) {
+                const winInfo = winningNumbersCache[ticket.round];
+                if (winInfo) {
+                    const results = ticket.games.map(game => checkRank(game, winInfo.numbers, winInfo.bonus));
+                    ticket.win_results = results; // 로컬 데이터 업데이트
+                    updates.push({ id: ticket.id, win_results: results });
+                }
+            }
+        });
+
+        if (updates.length > 0) {
+            console.log(`[Lotto] ${updates.length}개의 티켓 결과를 DB에 기록합니다.`);
+            try {
+                // 하나씩 업데이트 (안전성 우선)
+                for (const update of updates) {
+                    await _supabase
+                        .from('lotto_tickets')
+                        .update({ win_results: update.win_results })
+                        .eq('id', update.id);
+                }
+                localStorage.setItem('myLottoData', JSON.stringify(lottoData));
+            } catch (e) {
+                console.error("결과 DB 동기화 실패:", e);
+            }
+        }
+    }
+
     // API 통신 및 당첨 확인 로직 (Supabase 캐싱 적용)
     async function fetchWinningNumbersForRound(round) {
         try {
+            // 0. 로컬 캐시 먼저 확인
+            if (winningNumbersCache[round]) {
+                return;
+            }
+
             // 1. Supabase DB에서 먼저 조회 (네트워크 캐싱 우선)
             if (_supabase) {
                 const { data: dbData, error: dbError } = await _supabase
@@ -801,7 +885,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const rounds = [...new Set(lottoData.map(t => t.round))];
         const promises = rounds.map(r => fetchWinningNumbersForRound(r));
 
-        Promise.all(promises).then(() => {
+        Promise.all(promises).then(async () => {
+            // 업데이트 직후 다시 한 번 결과 동기화
+            await syncWinResults();
             setTimeout(() => {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 최신 당첨결과 업데이트';
                 renderLottoList();
@@ -866,10 +952,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const labels = ['A', 'B', 'C', 'D', 'E'];
 
                 let resultObj = null;
-                if (winInfo) {
+                
+                // 1. DB에 이미 저장된 결과가 있는지 확인
+                if (ticket.win_results && ticket.win_results[index]) {
+                    resultObj = ticket.win_results[index];
+                } 
+                // 2. 저장된 결과가 없다면 실시간 계산 (winInfo가 있을 때만)
+                else if (winInfo) {
                     resultObj = checkRank(game, winInfo.numbers, winInfo.bonus);
-                    if (resultObj.rank > 0) winCount++;
                 }
+
+                if (resultObj && resultObj.rank > 0) winCount++;
 
                 let gameHtml = `<div class="game-row">
                     <div class="game-label">${labels[index] || '-'}</div>
