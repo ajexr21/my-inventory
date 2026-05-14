@@ -265,11 +265,22 @@ window.initEventListeners = function() {
             if (icon) icon.className = 'fas fa-moon';
         }
     });
-    isPrivateToggle.addEventListener('change', () => passwordArea.classList.toggle('hidden', !isPrivateToggle.checked));
-    document.getElementById('save-diary-btn').addEventListener('click', window.saveDiary);
-    document.getElementById('confirm-auth-btn').addEventListener('click', window.checkPassword);
-    document.getElementById('delete-diary-btn').addEventListener('click', window.deleteDiary);
-    document.getElementById('cancel-write-btn').addEventListener('click', () => window.closeModal(writeModal));
+    const isPrivateEl = document.getElementById('is-private');
+    if (isPrivateEl) {
+        isPrivateEl.addEventListener('change', () => passwordArea.classList.toggle('hidden', !isPrivateEl.checked));
+    }
+    
+    const saveBtn = document.getElementById('save-diary-btn');
+    if (saveBtn) saveBtn.addEventListener('click', window.saveDiary);
+    
+    const confirmAuthBtn = document.getElementById('confirm-auth-btn');
+    if (confirmAuthBtn) confirmAuthBtn.addEventListener('click', window.checkPassword);
+    
+    const deleteBtn = document.getElementById('delete-diary-btn');
+    if (deleteBtn) deleteBtn.addEventListener('click', window.deleteDiary);
+    
+    const cancelWriteBtn = document.getElementById('cancel-write-btn');
+    if (cancelWriteBtn) cancelWriteBtn.addEventListener('click', () => window.closeModal(writeModal));
 
     // 검색 관련 이벤트
     const searchToggle = document.getElementById('search-toggle');

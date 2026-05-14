@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const winModalCloseBtn = document.getElementById('win-modal-close-btn');
     const winModalConfirmBtn = document.getElementById('win-modal-confirm-btn');
     const winRoundInput = document.getElementById('win-round');
-    
-    // [추가] 스캔 결과 모달 버튼 이벤트 리스너
+
+    // [이벤트 리스너] 스캔 결과 모달 버튼
     if (scanConfirmBtn) scanConfirmBtn.addEventListener('click', closeScanResultModal);
     if (scanCancelBtn) scanCancelBtn.addEventListener('click', closeScanResultModal);
     if (scanModalCloseBtn) scanModalCloseBtn.addEventListener('click', closeScanResultModal);
