@@ -42,10 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
         "거의 다 됐어요! 책장의<br>먼지를 탈탈 털어내고 있어요. 🧹"
     ];
 
-    window.showLoading = (initialMsg) => {
+    window.showLoading = (initialMsg, title = "책 정보를 찾는 중...", iconClass = "fa-search") => {
+        if (loadingInterval) clearInterval(loadingInterval);
         const msgEl = document.getElementById('loading-status-msg');
-        let idx = 0;
+        const titleEl = document.getElementById('loading-title');
+        const iconEl = document.getElementById('loading-icon');
         
+        if (titleEl) titleEl.innerText = title;
+        if (iconEl) {
+            iconEl.className = `fas ${iconClass}`;
+            if (iconClass === 'fa-spinner') iconEl.classList.add('fa-spin');
+        }
+
+        let idx = 0;
         if (msgEl) msgEl.innerHTML = initialMsg || loadingMessages[0];
         
         window.openModal(document.getElementById('loading-modal'));
@@ -55,7 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (msgEl) {
                 msgEl.style.opacity = 0;
                 setTimeout(() => {
-                    msgEl.innerHTML = loadingMessages[idx];
+                    // 등록 중일 때는 검색 메시지를 보여주지 않음
+                    if (title === "책장에 넣는 중...") {
+                        const registerMessages = [
+                            "교은이의 소중한 책을<br>책장에 쏙 넣고 있어요! ✨",
+                            "이미지를 안전하게<br>저장하고 있어요... 📸",
+                            "거의 다 됐어요! 책장의<br>먼지를 탈탈 털어내고 있어요. 🧹"
+                        ];
+                        msgEl.innerHTML = registerMessages[idx % registerMessages.length];
+                    } else {
+                        msgEl.innerHTML = loadingMessages[idx];
+                    }
                     msgEl.style.opacity = 1;
                 }, 300);
             }
@@ -440,9 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchBookByISBN(isbn, isManual = false) {
         try {
             if (!_supabase) return;
-            window.showLoading();
+            window.showLoading(null, "책 정보를 찾는 중...", "fa-search");
 
-            // 1. 카카오 검색 시도 (속도가 빠르고 표준적임)
+            // 서버(Edge Function)가 카카오 -> 알라딘 순으로 알아서 찾아줍니다.
             const { data, error } = await _supabase.functions.invoke('search-books', {
                 body: { isbn: isbn }
             });
@@ -451,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const b = data.documents[0];
                 const bookData = {
                     title: b.title,
-                    author: b.authors.join(', '),
+                    author: Array.isArray(b.authors) ? b.authors.join(', ') : b.authors,
                     publisher: b.publisher,
                     cover_url: b.thumbnail,
                     isbn: isbn
@@ -468,27 +487,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 2. 카카오 실패 시 알라딘 검색 시도 (최신/한정판 도서 보완)
-            window.updateLoadingMsg("카카오 친구들이 못 찾았대요!<br>알라딘 지니를 깨우러 갑니다! 🧞‍♂️💨");
-            
-            console.log("카카오에서 정보를 찾지 못해 알라딘 검색을 시작합니다...");
-            const aladinBook = await fetchFromAladin(isbn);
-            
-            if (aladinBook) {
-                if (isManual) {
-                    document.getElementById('manual-title').value = aladinBook.title;
-                    document.getElementById('manual-author').value = aladinBook.author;
-                    window.hideLoading();
-                    return aladinBook;
-                }
-                window.hideLoading();
-                await addNewBook(aladinBook);
-                return;
-            }
-
             // 둘 다 실패한 경우
             window.hideLoading();
-            await window.customAlert(`카카오와 알라딘 모두에서 책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
+            await window.customAlert(`책 정보를 찾지 못했어요. (ISBN: ${isbn})\n직접 입력 기능을 이용해 주세요!`, "검색 결과 없음");
             
         } catch (error) {
             window.hideLoading();
@@ -497,46 +498,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 알라딘 웹 스크래핑 (API 키 없이 AllOrigins 프록시 활용)
-    async function fetchFromAladin(isbn) {
-        try {
-            const targetUrl = `https://www.aladin.co.kr/shop/wproduct.aspx?ISBN=${isbn}`;
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&timestamp=${Date.now()}`;
-            
-            const response = await fetch(proxyUrl);
-            if (!response.ok) return null;
-            
-            const data = await response.json();
-            const html = data.contents;
-            if (!html || html.includes("존재하지 않는 상품입니다")) return null;
-
-            // DOM 파싱을 통해 Meta 정보 추출
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            const title = doc.querySelector('meta[property="og:title"]')?.content?.split(' - ')[0]?.trim();
-            const author = doc.querySelector('meta[name="author"]')?.content || 
-                           doc.querySelector('meta[property="og:author"]')?.content || 
-                           "작가 미상";
-            const cover_url = doc.querySelector('meta[property="og:image"]')?.content;
-            
-            if (!title) return null;
-
-            return {
-                title: title,
-                author: author,
-                publisher: "알라딘 검색",
-                cover_url: cover_url,
-                isbn: isbn
-            };
-        } catch (e) {
-            console.warn("Aladin search failed:", e);
-            return null;
-        }
-    }
-
     async function addNewBook(book) {
         if (!_supabase) return;
+
+        // 중복 등록 방지 (ISBN 기준)
+        if (book.isbn) {
+            const isDuplicate = books.some(b => b.isbn === book.isbn);
+            if (isDuplicate) {
+                window.hideLoading();
+                const existBook = books.find(b => b.isbn === book.isbn);
+                const ok = await window.customConfirm(`이미 서재에 있는 책이에요!\n'${existBook.title}' 상세 페이지로 이동할까요?`);
+                if (ok) {
+                    openBookDetail(existBook.id);
+                }
+                return;
+            }
+        }
         
         const { error } = await _supabase
             .from('library_books')
@@ -792,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateBookCoverImage = async (bookId, file) => {
         if (!file) return;
         
-        window.showLoading();
+        window.showLoading("새로운 표지를 저장하는 중... 📸", "표지 저장 중...", "fa-camera");
         window.updateLoadingMsg("새로운 표지를 저장하는 중... 📸");
         
         const uploadedUrl = await uploadBookCover(file);
@@ -1023,20 +1000,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 이미지 압축 함수 (1024px 기준)
+    async function compressImage(file, maxWidth = 1024) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                    }, 'image/jpeg', 0.8);
+                };
+            };
+        });
+    }
+
     // Supabase Storage 이미지 업로드 함수
     async function uploadBookCover(file) {
         try {
             if (!_supabase || !file) return null;
             
+            // 이미지 압축 진행
+            const compressedFile = await compressImage(file);
+            
             // 파일명 생성 (중복 방지)
-            const fileExt = file.name.split('.').pop();
+            const fileExt = 'jpg'; // 압축 후 jpeg로 통일
             const fileName = `book_${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
             const filePath = `covers/${fileName}`;
 
             // 업로드
             const { data, error } = await _supabase.storage
                 .from('library')
-                .upload(filePath, file);
+                .upload(filePath, compressedFile);
 
             if (error) {
                 console.error('Storage 업로드 에러:', error);
@@ -1082,15 +1093,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const author = authorInput.value.trim();
         const isbn = isbnInput.value.trim();
         
-        // ISBN이 있고 제목/작가 중 하나라도 비어있으며 아직 검색 결과가 없다면 자동 검색 시도
+        // ISBN이 있고 제목이나 작가가 비어있을 때만 자동 검색 시도
         if (isbn && (!title || !author) && !manualBookData) {
             manualBookData = await searchBookByISBN(isbn, true);
         } else if (!title) {
+            // 제목은 필수 (ISBN이 없을 때)
             await window.customAlert("책 이름을 알려주세요!", "입력 확인");
             return;
         }
 
-        window.showLoading("교은이의 소중한 책을<br>책장에 쏙 넣고 있어요! ✨");
+        // 등록 시작 (타이틀과 아이콘 변경)
+        window.showLoading("교은이의 소중한 책을<br>책장에 쏙 넣고 있어요! ✨", "책장에 넣는 중...", "fa-magic");
 
         let coverUrl = '';
         
@@ -1104,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const bookData = {
-            title: titleInput.value.trim(), // 검색 후 채워졌을 수 있으므로 다시 가져옴
+            title: titleInput.value.trim(), 
             author: authorInput.value.trim() || '작가 미상',
             isbn: isbn,
             status: 'reading',
@@ -1158,15 +1171,24 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('touchend', () => {
         const distance = touchMove - touchStart;
         
-        if (distance > threshold && window.scrollY <= 1) {
+        // 당긴 거리와 스크롤 위치를 엄격하게 체크
+        if (distance > threshold && window.scrollY <= 5) {
             // 새로고침 실행
             ptrIndicator.style.transform = `translateY(80px)`;
+            
+            // 시각적 피드백
+            const icon = ptrIndicator.querySelector('i');
+            icon.classList.add('fa-spin');
+            
             // 진동 피드백 (지원하는 기기만)
             if (window.navigator.vibrate) window.navigator.vibrate(50);
             
             setTimeout(() => {
-                window.location.reload(true);
-            }, 300);
+                // 단순 새로고침보다 확실한 캐시 방지 적용
+                const url = new URL(window.location.href);
+                url.searchParams.set('refresh', Date.now());
+                window.location.href = url.toString();
+            }, 500);
         } else {
             // 취소: 원래 위치로 복구
             ptrIndicator.style.transform = 'translateY(0)';

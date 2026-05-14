@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanPreviewContainer = document.getElementById('scan-preview-container');
     const scanModalCloseBtn = document.getElementById('scan-modal-close-btn');
     const scanCancelBtn = document.getElementById('scan-cancel-btn');
-    const scanConfirmBtn = document.getElementById('scan-confirm-btn');
-
-    // Winning Result UI Elements
-    const editWinBtn = document.getElementById('edit-win-btn');
-    const winModal = document.getElementById('win-modal');
-    const winModalCloseBtn = document.getElementById('win-modal-close-btn');
     const winModalConfirmBtn = document.getElementById('win-modal-confirm-btn');
     const winRoundInput = document.getElementById('win-round');
+    
+    // [추가] 스캔 결과 모달 버튼 이벤트 리스너
+    if (scanConfirmBtn) scanConfirmBtn.addEventListener('click', closeScanResultModal);
+    if (scanCancelBtn) scanCancelBtn.addEventListener('click', closeScanResultModal);
+    if (scanModalCloseBtn) scanModalCloseBtn.addEventListener('click', closeScanResultModal);
+
     const winNumberGrid = document.getElementById('win-number-grid');
     const winSelectedCountEl = document.getElementById('win-selected-count');
     const winBallsPreviewEl = document.getElementById('win-balls-preview');
@@ -563,7 +563,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Scanned QR:", decodedText);
         // 동행복권 QR URL 파싱 로직 (더 유연하게)
         if (decodedText.includes('?v=') || decodedText.includes('v=')) {
-            stopScanner();
+            // 스캐너 일시 정지 (카메라는 켜둔 채로)
+            if (html5QrcodeScanner) {
+                try { html5QrcodeScanner.pause(); } catch(e) {}
+            }
 
             let vData = '';
             if (decodedText.includes('v=')) {
@@ -628,23 +631,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showSuccessModal(round, games) {
         isModalOpen = true;
-        
-        // 스캐너 일시정지
-        if (html5QrcodeScanner && html5QrcodeScanner.pause) {
-            html5QrcodeScanner.pause();
-        }
 
-        // 모달 제목 및 스타일 변경 (자동 등록 모드)
+        // 모달 제목 및 스타일 변경 (등록 완료 안내)
         const modalHeader = scanResultModal.querySelector('.modal-header h3');
         modalHeader.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i> 등록 완료!';
         
         scanRoundEl.textContent = round;
         scanGameCountEl.textContent = games.length;
         
-        // 버튼 숨김 (자동 진행이므로)
+        // 버튼 설정: "확인" 버튼만 보여주고 등록이 이미 되었음을 알림
         scanCancelBtn.classList.add('hidden');
-        scanConfirmBtn.classList.add('hidden');
-        scanModalCloseBtn.classList.add('hidden');
+        scanConfirmBtn.classList.remove('hidden');
+        scanConfirmBtn.textContent = "확인";
+        scanModalCloseBtn.classList.remove('hidden');
 
         scanPreviewContainer.innerHTML = '';
         games.forEach((game, idx) => {
@@ -671,15 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         openModal(scanResultModal);
-
-        // 1초 후 자동 닫기 및 재개
-        setTimeout(() => {
-            closeScanResultModal();
-            // 버튼 상태 복구 (다음에 혹시 쓸 수도 있으니)
-            scanCancelBtn.classList.remove('hidden');
-            scanConfirmBtn.classList.remove('hidden');
-            scanModalCloseBtn.classList.remove('hidden');
-        }, 1000);
     }
 
     function closeScanResultModal() {

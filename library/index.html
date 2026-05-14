@@ -1,19 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>교은이 우리집 도서관</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>교은이 도서관</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&family=Gaegu:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="style.css?v=1.6.1">
 </head>
+
 <body>
     <div id="ptr-indicator" class="ptr-indicator">
         <div class="ptr-spinner">
@@ -36,7 +41,7 @@
                     <div class="avatar-sm">교은</div>
                     <div class="welcome-msg">안녕, 교은아! 👋</div>
                 </div>
-                
+
                 <div class="plant-container">
                     <div class="garden-view">
                         <div class="plant-sprite-wrapper">
@@ -67,7 +72,7 @@
                         <button class="filter-btn" data-status="reading">읽고 있어요</button>
                         <button class="filter-btn" data-status="finished">다 읽었어요</button>
                     </div>
-                    
+
                     <div id="book-list" class="book-grid">
                         <div class="empty-state">
                             <i class="fas fa-book-medical"></i>
@@ -81,7 +86,8 @@
                     <div class="scan-container">
                         <div class="scan-header">
                             <h2 class="form-title">책 뒷면의 바코드를 보여주세요</h2>
-                            <p style="text-align:center; color:var(--text-muted); margin-bottom:20px;">마법의 돋보기가 책을 찾아줄 거예요!</p>
+                            <p style="text-align:center; color:var(--text-muted); margin-bottom:20px;">마법의 돋보기가 책을 찾아줄
+                                거예요!</p>
                         </div>
                         <div id="qr-reader" class="qr-scanner"></div>
                         <div class="scan-actions" style="display:flex; justify-content:center; gap:10px;">
@@ -95,7 +101,8 @@
                 <section id="tab-stamps" class="tab-content">
                     <div class="stamp-board">
                         <h2 class="form-title">교은이의 칭찬 도장판</h2>
-                        <p style="text-align:center; color:var(--text-muted); margin-bottom:20px;">책을 다 읽을 때마다 멋진 도장이 찍혀요!</p>
+                        <p style="text-align:center; color:var(--text-muted); margin-bottom:20px;">책을 다 읽을 때마다 멋진 도장이
+                            찍혀요!</p>
                         <div class="stamp-grid" id="stamp-grid">
                             <!-- JS에서 생성 -->
                         </div>
@@ -134,7 +141,7 @@
             <div class="modal-content manual-modal-content">
                 <div class="modal-handle"></div>
                 <button class="close-manual"><i class="fas fa-times"></i></button>
-                
+
                 <div class="manual-form">
                     <div class="form-header">
                         <div class="form-icon">📚</div>
@@ -146,10 +153,15 @@
                         <div class="input-group-premium">
                             <label for="manual-isbn"><i class="fas fa-barcode"></i> ISBN (바코드 숫자)</label>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="manual-isbn" placeholder="예: 97911..." autocomplete="off" style="flex: 1;">
-                                <button id="fetch-isbn-btn" class="icon-btn" style="width: 50px; height: 50px; background: var(--primary-color); color: white; border: none;"><i class="fas fa-search"></i></button>
+                                <input type="text" id="manual-isbn" placeholder="예: 97911..." autocomplete="off"
+                                    style="flex: 1;">
+                                <button id="fetch-isbn-btn" class="icon-btn"
+                                    style="width: 50px; height: 50px; background: var(--primary-color); color: white; border: none;"><i
+                                        class="fas fa-search"></i></button>
                             </div>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; padding-left: 4px;">숫자를 입력하고 돋보기를 누르면 책 정보를 찾아와요!</p>
+                            <p
+                                style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; padding-left: 4px;">
+                                숫자를 입력하고 돋보기를 누르면 책 정보를 찾아와요!</p>
                         </div>
 
                         <div class="input-row">
@@ -157,7 +169,7 @@
                                 <label for="manual-title"><i class="fas fa-bookmark"></i> 책 제목</label>
                                 <input type="text" id="manual-title" placeholder="예: 구름빵, 달 샤베트" autocomplete="off">
                             </div>
-                            
+
                             <div class="input-group-premium">
                                 <label for="manual-author"><i class="fas fa-pen-nib"></i> 글쓴이</label>
                                 <input type="text" id="manual-author" placeholder="예: 백희나 작가님" autocomplete="off">
@@ -192,49 +204,64 @@
 
     <!-- 로딩 모달 (검색 중 표시) -->
     <div id="loading-modal" class="modal hidden" style="align-items: center; justify-content: center; z-index: 3000;">
-        <div class="modal-content" style="max-width: 280px; border-radius: 28px; padding: 40px 20px; text-align: center; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(20px);">
+        <div class="modal-content"
+            style="max-width: 280px; border-radius: 28px; padding: 40px 20px; text-align: center; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(20px);">
             <div class="search-animation" style="margin-bottom: 20px;">
-                <i class="fas fa-search" style="font-size: 3rem; color: var(--primary-color); animation: pulse 1.5s infinite;"></i>
+                <i id="loading-icon" class="fas fa-search"
+                    style="font-size: 3rem; color: var(--primary-color); animation: pulse 1.5s infinite;"></i>
             </div>
-            <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 10px;">책 정보를 찾는 중...</h3>
-            <p id="loading-status-msg" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; font-family: 'Gaegu', cursive; min-height: 3em;">알라딘과 카카오를 열심히<br>뒤지고 있어요! 잠시만요 📚</p>
+            <h3 id="loading-title" style="font-size: 1.2rem; font-weight: 800; margin-bottom: 10px;">책 정보를 찾는 중...</h3>
+            <p id="loading-status-msg"
+                style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; font-family: 'Gaegu', cursive; min-height: 3em;">
+                알라딘과 카카오를 열심히<br>뒤지고 있어요! 잠시만요 📚</p>
         </div>
     </div>
 
     <!-- 커스텀 컨펌 모달 (우리집 시리즈 표준) -->
     <div id="confirm-modal" class="modal hidden" style="align-items: center; justify-content: center;">
-        <div class="modal-content" style="max-width: 320px; border-radius: 28px; padding: 30px 24px; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div class="modal-content"
+            style="max-width: 320px; border-radius: 28px; padding: 30px 24px; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
             <div style="text-align: center; margin-bottom: 20px;">
-                <div style="width: 60px; height: 60px; background: rgba(239, 68, 68, 0.1); color: #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem;">
+                <div
+                    style="width: 60px; height: 60px; background: rgba(239, 68, 68, 0.1); color: #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem;">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <h3 id="confirm-title" style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">책을 지울까요?</h3>
-                <p id="confirm-msg" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">교은이의 소중한 독서 기록이<br>목록에서 사라지게 됩니다.</p>
+                <p id="confirm-msg" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">교은이의 소중한 독서
+                    기록이<br>목록에서 사라지게 됩니다.</p>
             </div>
-            
+
             <div style="display: flex; gap: 10px;">
-                <button id="confirm-cancel-btn" class="opt-btn" style="flex: 1; padding: 12px; font-size: 0.9rem; background: rgba(255, 255, 255, 0.05); border-color: transparent;">취소</button>
-                <button id="confirm-ok-btn" class="opt-btn" style="flex: 1; padding: 12px; font-size: 0.9rem; background: #EF4444; border-color: #EF4444; color: white;">삭제</button>
+                <button id="confirm-cancel-btn" class="opt-btn"
+                    style="flex: 1; padding: 12px; font-size: 0.9rem; background: rgba(255, 255, 255, 0.05); border-color: transparent;">취소</button>
+                <button id="confirm-ok-btn" class="opt-btn"
+                    style="flex: 1; padding: 12px; font-size: 0.9rem; background: #EF4444; border-color: #EF4444; color: white;">삭제</button>
             </div>
         </div>
     </div>
 
     <!-- 커스텀 알림 모달 (우리집 시리즈 표준) -->
     <div id="alert-modal" class="modal hidden" style="align-items: center; justify-content: center;">
-        <div class="modal-content" style="max-width: 320px; border-radius: 28px; padding: 30px 24px; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div class="modal-content"
+            style="max-width: 320px; border-radius: 28px; padding: 30px 24px; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
             <div style="text-align: center; margin-bottom: 20px;">
-                <div id="alert-icon-container" style="width: 60px; height: 60px; background: rgba(167, 139, 250, 0.1); color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem;">
+                <div id="alert-icon-container"
+                    style="width: 60px; height: 60px; background: rgba(167, 139, 250, 0.1); color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem;">
                     <i class="fas fa-info-circle"></i>
                 </div>
                 <h3 id="alert-title" style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">알림</h3>
-                <p id="alert-msg" style="font-size: 0.95rem; color: var(--text-main); line-height: 1.5; font-family: 'Gaegu', cursive;"></p>
+                <p id="alert-msg"
+                    style="font-size: 0.95rem; color: var(--text-main); line-height: 1.5; font-family: 'Gaegu', cursive;">
+                </p>
             </div>
-            
-            <button id="alert-ok-btn" class="primary-btn" style="padding: 14px; font-size: 1rem; border-radius: 16px; margin-top: 0;">확인</button>
+
+            <button id="alert-ok-btn" class="primary-btn"
+                style="padding: 14px; font-size: 1rem; border-radius: 16px; margin-top: 0;">확인</button>
         </div>
     </div>
 
     <script src="../config.js?v=1.5.1"></script>
     <script src="script.js?v=1.6.1"></script>
 </body>
+
 </html>
