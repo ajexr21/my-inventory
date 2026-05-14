@@ -1123,11 +1123,7 @@ header {
     right: 20px;
 }
 
-/* Pretendard 폰트가 없을 경우 대비 */
-@font-face {
-    font-family: 'Pretendard';
-    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/pretendard@v1.3.8/dist/web/static/pretendard.css');
-}
+/* Pretendard 폰트 공식 CDN 사용 (index.html에서 로드) */
 
 /* --- Pull to Refresh Indicator --- */
 .ptr-indicator {
