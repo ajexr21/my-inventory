@@ -1130,69 +1130,86 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeModal(manualModal);
     });
 
-    // --- Pull to Refresh 로직 (아이폰 캐시 방지용) ---
+    // --- Pull to Refresh 로직 (우리집 시리즈 표준 개선판) ---
     let touchStart = 0;
     let touchMove = 0;
+    let isRefreshing = false;
     const ptrIndicator = document.getElementById('ptr-indicator');
-    const threshold = 120; // 새로고침이 실행될 당기기 거리
+    const threshold = 120;
 
     window.addEventListener('touchstart', (e) => {
-        // 페이지가 최상단에 있을 때만 시작
-        if (window.scrollY <= 1) {
+        // 이미 새로고침 중이면 무시
+        if (isRefreshing) return;
+        
+        // 페이지가 최상단일 때만 좌표 기록
+        if (window.scrollY <= 5) {
             touchStart = e.touches[0].screenY;
+            // 드래그 시작 시 트랜지션 제거 (손가락을 1:1로 따라오게)
+            ptrIndicator.style.transition = 'none';
         } else {
             touchStart = 0;
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
-        if (touchStart === 0) return;
+        if (touchStart === 0 || isRefreshing) return;
         
         touchMove = e.touches[0].screenY;
         const distance = touchMove - touchStart;
 
-        if (distance > 0 && window.scrollY <= 1) {
-            // 아래로 당기는 애니메이션 (저항감 효과)
-            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2;
+        if (distance > 0 && window.scrollY <= 5) {
+            // 브라우저 기본 바운스 효과 차단 (스크롤이 튄 것을 방지)
+            if (e.cancelable) e.preventDefault();
+            
+            // 아래로 당기는 애니메이션 (저항감 효과 적용)
+            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2.5;
             ptrIndicator.style.transform = `translateY(${pull}px)`;
             
-            // 임계값 도달 시 아이콘 회전
+            // 임계값 도달 시 시각적 피드백
             const icon = ptrIndicator.querySelector('i');
             if (distance > threshold) {
-                icon.style.color = 'var(--accent-color)';
-                icon.style.filter = 'drop-shadow(0 0 8px var(--accent-color))';
+                icon.style.color = 'var(--accent)';
+                icon.style.filter = 'drop-shadow(0 0 8px var(--accent))';
+                icon.style.transform = 'rotate(180deg)';
             } else {
-                icon.style.color = 'var(--primary-color)';
+                icon.style.color = 'var(--primary)';
                 icon.style.filter = 'none';
+                icon.style.transform = `rotate(${distance * 1.5}deg)`;
             }
         }
-    }, { passive: true });
+    }, { passive: false }); // preventDefault 사용을 위해 passive: false 설정
 
     window.addEventListener('touchend', () => {
-        const distance = touchMove - touchStart;
+        if (touchStart === 0 || isRefreshing) return;
         
-        // 당긴 거리와 스크롤 위치를 엄격하게 체크
-        if (distance > threshold && window.scrollY <= 5) {
-            // 새로고침 실행
+        const distance = touchMove - touchStart;
+        ptrIndicator.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        
+        if (distance > threshold && window.scrollY <= 10) {
+            isRefreshing = true;
+            
+            // 새로고침 위치 고정
             ptrIndicator.style.transform = `translateY(80px)`;
             
-            // 시각적 피드백
+            // 아이콘 회전 애니메이션 시작
             const icon = ptrIndicator.querySelector('i');
-            icon.classList.add('fa-spin');
+            icon.classList.add('refreshing-spin');
             
-            // 진동 피드백 (지원하는 기기만)
+            // 진동 피드백
             if (window.navigator.vibrate) window.navigator.vibrate(50);
             
             setTimeout(() => {
-                // 단순 새로고침보다 확실한 캐시 방지 적용
-                const url = new URL(window.location.href);
-                url.searchParams.set('refresh', Date.now());
-                window.location.href = url.toString();
-            }, 500);
+                // 히스토리 오염 없는 새로고침
+                window.location.reload();
+            }, 600);
         } else {
-            // 취소: 원래 위치로 복구
+            // 취소: 부드럽게 원래 위치로 복구
             ptrIndicator.style.transform = 'translateY(0)';
+            const icon = ptrIndicator.querySelector('i');
+            icon.style.transform = 'rotate(0deg)';
         }
+        
+        // 상태 초기화
         touchStart = 0;
         touchMove = 0;
     });
