@@ -1161,19 +1161,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // 브라우저 기본 바운스 효과 차단 (스크롤이 튄 것을 방지)
             if (e.cancelable) e.preventDefault();
             
-            // 아래로 당기는 애니메이션 (저항감 효과 적용)
-            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2.5;
+            // 아래로 당기는 애니메이션 (저항감 효과 적용: 가계부 표준 2.0으로 수정)
+            const pull = Math.pow(Math.min(distance, threshold * 2), 0.8) * 2.0;
             ptrIndicator.style.transform = `translateY(${pull}px)`;
             
-            // 임계값 도달 시 시각적 피드백
+            // 임계값 도달 시 시각적 피드백 (회전만 제어)
             const icon = ptrIndicator.querySelector('i');
             if (distance > threshold) {
-                icon.style.color = 'var(--accent)';
-                icon.style.filter = 'drop-shadow(0 0 8px var(--accent))';
                 icon.style.transform = 'rotate(180deg)';
             } else {
-                icon.style.color = 'var(--primary)';
-                icon.style.filter = 'none';
                 icon.style.transform = `rotate(${distance * 1.5}deg)`;
             }
         }
