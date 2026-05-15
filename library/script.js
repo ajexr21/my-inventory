@@ -346,14 +346,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 7. 칭찬 도장 렌더링
     function renderStamps() {
-        const finishedCount = books.filter(b => b.status === 'finished').length;
+        // 누적 읽은 횟수 합계 (또 읽었어요 포함)
+        const finishedCount = books.reduce((acc, b) => acc + Number(b.read_count || 0), 0);
         
         // 20개 단위로 판수 계산
         const boardCycle = finishedCount > 0 ? Math.floor((finishedCount - 1) / 20) + 1 : 1;
         const currentBoardCount = finishedCount % 20 === 0 && finishedCount > 0 ? 20 : finishedCount % 20;
 
         // 도장판 제목 업데이트 (몇 번째 판인지 표시)
-        const stampTitle = document.querySelector('.tab-content[data-tab="stamps"] h2');
+        const stampTitle = document.querySelector('#tab-stamps h2');
         if (stampTitle) {
             stampTitle.innerText = `칭찬 도장판 (${boardCycle}회차)`;
         }
